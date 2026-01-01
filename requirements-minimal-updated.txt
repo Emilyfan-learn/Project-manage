@@ -1,0 +1,8 @@
+# 最小化安裝需求（相容 Python 3.11-3.14）
+# 使用較新版本以確保有預編譯套件
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+python-multipart>=0.0.20
+aiosqlite>=0.20.0
