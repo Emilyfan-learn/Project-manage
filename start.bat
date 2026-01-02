@@ -1,63 +1,62 @@
 @echo off
-chcp 65001 >nul
-title Project Tracker - 專案追蹤管理系統
+chcp 65001 >nul 2>&1
+title Project Tracker
 
 echo ========================================
 echo   Project Tracker v2.0
-echo   專案追蹤管理系統
 echo ========================================
 echo.
 
-:: Check if Python is installed
+REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [錯誤] 找不到 Python，請先安裝 Python 3.10+
-    echo 下載地址: https://www.python.org/downloads/
+    echo [ERROR] Python not found. Please install Python 3.10+
+    echo Download: https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
-:: Check if venv exists, if not create it
+REM Check if venv exists, if not create it
 if not exist "venv" (
-    echo [設定] 首次執行，正在建立虛擬環境...
+    echo [SETUP] Creating virtual environment...
     python -m venv venv
     if errorlevel 1 (
-        echo [錯誤] 無法建立虛擬環境
+        echo [ERROR] Failed to create virtual environment
         pause
         exit /b 1
     )
 )
 
-:: Activate venv
+REM Activate venv
 call venv\Scripts\activate.bat
 
-:: Install dependencies if needed
+REM Install dependencies if needed
 if not exist "venv\Lib\site-packages\fastapi" (
-    echo [設定] 正在安裝必要套件...
+    echo [SETUP] Installing packages...
     pip install -r requirements-portable.txt --quiet
     if errorlevel 1 (
-        echo [錯誤] 套件安裝失敗
+        echo [ERROR] Package installation failed
         pause
         exit /b 1
     )
 )
 
-:: Initialize database if needed
+REM Initialize database if needed
 if not exist "data\project_tracking.db" (
-    echo [設定] 正在初始化資料庫...
+    echo [SETUP] Initializing database...
     python -c "from backend.init_db import create_database_schema; create_database_schema()"
 )
 
 echo.
-echo [啟動] 伺服器啟動中...
+echo [START] Starting server...
 echo.
 echo ========================================
-echo   請在瀏覽器開啟: http://localhost:8000
-echo   按 Ctrl+C 停止伺服器
+echo   Open browser: http://localhost:8000
+echo   Press Ctrl+C to stop
 echo ========================================
 echo.
 
-:: Start the server
+REM Start the server
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 
 pause

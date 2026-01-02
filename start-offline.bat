@@ -1,68 +1,70 @@
 @echo off
-chcp 65001 >nul
-title Project Tracker - 離線安裝版
+chcp 65001 >nul 2>&1
+title Project Tracker
 
 echo ========================================
-echo   Project Tracker v2.0 (離線版)
-echo   專案追蹤管理系統
+echo   Project Tracker v2.0
+echo   Offline Installation
 echo ========================================
 echo.
 
-:: Check if Python is installed
+REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [錯誤] 找不到 Python，請先安裝 Python 3.10+
+    echo [ERROR] Python not found. Please install Python 3.10+
     pause
     exit /b 1
 )
 
-:: Check if packages folder exists
+REM Check if packages folder exists
 if not exist "packages" (
-    echo [錯誤] 找不到 packages 資料夾
-    echo 請先在可上網的電腦執行以下指令準備套件：
-    echo.
-    echo   pip download -r requirements-portable.txt -d packages/
-    echo.
+    echo [ERROR] packages folder not found
+    echo Please download the complete project with packages folder
     pause
     exit /b 1
 )
 
-:: Check if venv exists, if not create it
+REM Check if venv exists, if not create it
 if not exist "venv" (
-    echo [設定] 首次執行，正在建立虛擬環境...
+    echo [SETUP] Creating virtual environment...
     python -m venv venv
-)
-
-:: Activate venv
-call venv\Scripts\activate.bat
-
-:: Install from local packages
-if not exist "venv\Lib\site-packages\fastapi" (
-    echo [設定] 正在從本地安裝套件...
-    pip install --no-index --find-links=packages/ -r requirements-portable.txt --quiet
     if errorlevel 1 (
-        echo [錯誤] 套件安裝失敗
+        echo [ERROR] Failed to create virtual environment
         pause
         exit /b 1
     )
 )
 
-:: Initialize database if needed
+REM Activate venv
+call venv\Scripts\activate.bat
+
+REM Install from local packages
+if not exist "venv\Lib\site-packages\fastapi" (
+    echo [SETUP] Installing packages from local folder...
+    pip install --no-index --find-links=packages/ -r requirements-portable.txt
+    if errorlevel 1 (
+        echo [ERROR] Package installation failed
+        pause
+        exit /b 1
+    )
+)
+
+REM Initialize database if needed
 if not exist "data\project_tracking.db" (
-    echo [設定] 正在初始化資料庫...
+    echo [SETUP] Initializing database...
     python -c "from backend.init_db import create_database_schema; create_database_schema()"
 )
 
 echo.
-echo [啟動] 伺服器啟動中...
+echo [START] Starting server...
 echo.
 echo ========================================
-echo   請在瀏覽器開啟: http://localhost:8000
-echo   按 Ctrl+C 停止伺服器
+echo   Open browser: http://localhost:8000
+echo   Press Ctrl+C to stop
 echo ========================================
 echo.
 
-:: Start the server
+REM Start the server
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 
 pause
