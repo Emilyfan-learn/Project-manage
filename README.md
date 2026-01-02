@@ -11,31 +11,58 @@
 - **問題追蹤** - 完整的問題追蹤系統，支援升級和解決流程
 - **甘特圖** - 視覺化專案時程
 - **備份管理** - 資料備份和還原功能
-- **Excel 匯入/匯出** - 支援 Excel 格式的資料匯入匯出
+- **Excel 匯入/匯出** - 支援 Excel 格式的資料匯入匯出（完整版）
 
-## 技術架構
+---
 
-### 後端
-- **Python 3.10+**
-- **FastAPI** - 高效能的 Web 框架
-- **SQLite** - 輕量級資料庫
-- **SQLAlchemy** - ORM 框架
-- **Pydantic** - 資料驗證
+## 快速安裝（Windows 便攜版）
 
-### 前端
-- **React 18** - UI 框架
-- **Vite** - 建構工具
-- **Tailwind CSS** - CSS 框架
-- **React Router** - 路由管理
-- **Recharts** - 圖表元件
-- **Frappe Gantt** - 甘特圖元件
+### 環境需求
+- **只需要 Python 3.10+**（不需要 Node.js）
+- 前端已預先建構完成
 
-## 安裝與執行
+### 一鍵啟動
+
+1. **下載專案**
+   - 從 GitHub 下載 ZIP 並解壓縮
+   - 或使用 `git clone`
+
+2. **執行 `start.bat`**
+   ```
+   雙擊 start.bat
+   ```
+
+3. **開啟瀏覽器**
+   ```
+   http://localhost:8000
+   ```
+
+首次執行會自動：
+- 建立 Python 虛擬環境
+- 安裝必要套件（約 20MB）
+- 初始化資料庫
+
+### 離線安裝（公司網路受限）
+
+如果公司無法連接 PyPI，可以在家裡先準備好套件：
+
+```bash
+# 在可上網的電腦執行
+pip download -r requirements-portable.txt -d packages/
+```
+
+然後把 `packages/` 資料夾一起帶到公司，修改安裝指令：
+```bash
+pip install --no-index --find-links=packages/ -r requirements-portable.txt
+```
+
+---
+
+## 完整安裝（開發者版本）
 
 ### 環境需求
 - Python 3.10 或更高版本
-- Node.js 18 或更高版本
-- npm 或 yarn
+- Node.js 18 或更高版本（僅開發時需要）
 
 ### 後端設定
 
@@ -45,68 +72,64 @@ python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # 或 venv\Scripts\activate  # Windows
 
-# 安裝依賴
+# 安裝完整依賴（含 Excel 功能）
 pip install -r requirements.txt
 
 # 啟動後端伺服器
-cd backend
-python main.py
+python -m uvicorn backend.main:app --reload
 ```
 
-後端伺服器預設執行於 http://localhost:8000
-
-### 前端設定
+### 前端開發
 
 ```bash
-# 進入前端目錄
 cd frontend
-
-# 安裝依賴
 npm install
-
-# 開發模式執行
-npm run dev
-
-# 建構生產版本
-npm run build
+npm run dev      # 開發模式
+npm run build    # 建構生產版本
 ```
 
-前端開發伺服器預設執行於 http://localhost:5173
+---
+
+## 版本比較
+
+| 功能 | 便攜版 | 完整版 |
+|------|--------|--------|
+| 專案管理 | ✅ | ✅ |
+| WBS 管理 | ✅ | ✅ |
+| 依賴關係 | ✅ | ✅ |
+| 待辦清單 | ✅ | ✅ |
+| 問題追蹤 | ✅ | ✅ |
+| 甘特圖 | ✅ | ✅ |
+| 備份管理 | ✅ | ✅ |
+| Excel 匯入/匯出 | ❌ | ✅ |
+| 安裝大小 | ~20MB | ~150MB |
+| 需要 Node.js | ❌ | ✅（開發時）|
+
+---
 
 ## 專案結構
 
 ```
 Project-manage/
 ├── backend/
-│   ├── database/          # SQL 腳本
-│   ├── migrations/        # 資料庫遷移
 │   ├── models/            # Pydantic 模型
 │   ├── routers/           # API 路由
 │   ├── services/          # 業務邏輯
 │   ├── config.py          # 設定檔
-│   ├── database.py        # 資料庫連線
 │   ├── init_db.py         # 資料庫初始化
 │   └── main.py            # 應用程式入口
 ├── frontend/
-│   ├── src/
-│   │   ├── components/    # React 元件
-│   │   ├── hooks/         # 自訂 Hooks
-│   │   ├── pages/         # 頁面元件
-│   │   ├── styles/        # 樣式檔案
-│   │   ├── utils/         # 工具函數
-│   │   ├── App.jsx        # 主應用程式
-│   │   └── main.jsx       # 入口點
-│   ├── package.json
-│   └── vite.config.js
+│   ├── dist/              # 預建構的前端（便攜版使用）
+│   └── src/               # 前端原始碼
 ├── data/                  # 資料庫和備份
-├── logs/                  # 日誌檔案
-├── requirements.txt       # Python 依賴
-└── README.md
+├── start.bat              # Windows 一鍵啟動
+├── requirements-portable.txt  # 精簡依賴
+└── requirements.txt       # 完整依賴
 ```
 
 ## API 文件
 
-啟動後端伺服器後，可以訪問以下網址查看 API 文件：
+啟動後可訪問：
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 

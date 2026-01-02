@@ -39,8 +39,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build outputs
-frontend/dist/
+# Build outputs (keeping frontend/dist for portable version)
+# frontend/dist/
 frontend/build/
 
 # Environment variables
@@ -83,3 +83,6 @@ htmlcov/
 # Temporary files
 *.tmp
 *.temp
+
+# Offline packages (user-generated)
+packages/
