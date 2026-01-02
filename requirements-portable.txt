@@ -1,13 +1,18 @@
 # Minimal dependencies for portable installation
-# Compatible with Python 3.10 - 3.14
+# Compatible with Python 3.14
 
 # Core web framework
-fastapi==0.103.2
-uvicorn>=0.24.0
+fastapi>=0.128.0
+uvicorn>=0.39.0
+starlette>=0.49.0
 
-# Data validation (v1 - pure Python)
-pydantic==1.10.13
+# Data validation (v2)
+pydantic>=2.12.0
+pydantic-core>=2.41.0
+annotated-types>=0.7.0
+typing-inspection>=0.4.0
 
 # Utilities
-python-dateutil==2.8.2
-python-multipart==0.0.6
+python-dateutil>=2.8.0
+python-multipart>=0.0.6
+typing-extensions>=4.0.0
