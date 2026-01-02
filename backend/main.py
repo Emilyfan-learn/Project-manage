@@ -70,13 +70,18 @@ app.include_router(pending.router, prefix="/api/pending", tags=["Pending Items"]
 app.include_router(issues.router, prefix="/api/issues", tags=["Issue Tracking"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["Settings"])
 
-# Excel router is optional - only include if pandas is available
+# CSV router - no external dependencies, always available
+from backend.routers import csv_router
+app.include_router(csv_router.router, prefix="/api/csv", tags=["CSV Import/Export"])
+print("✓ CSV import/export functionality enabled")
+
+# Excel router is optional - only include if openpyxl is available
 try:
     from backend.routers import excel
     app.include_router(excel.router, prefix="/api/excel", tags=["Excel Import/Export"])
-    print("✓ Excel import/export functionality enabled")
+    print("✓ Excel import/export functionality enabled (optional)")
 except ImportError:
-    print("⚠ Excel import/export functionality disabled (pandas not installed)")
+    print("ℹ Excel import/export disabled (use CSV instead)")
 
 app.include_router(dependencies.router, prefix="/api/dependencies", tags=["Dependencies"])
 app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])

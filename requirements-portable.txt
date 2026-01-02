@@ -1,5 +1,6 @@
 # Minimal dependencies for portable installation
-# Excel import/export will be disabled but all other features work
+# CSV import/export works without additional dependencies (Python built-in)
+# CSV files can be opened directly in Excel
 
 # Core web framework
 fastapi==0.104.1
