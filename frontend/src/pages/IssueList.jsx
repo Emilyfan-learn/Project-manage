@@ -12,7 +12,7 @@ const IssueList = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-  const [projectId, setProjectId] = useState(searchParams.get('project') || 'PRJ001')
+  const [projectId, setProjectId] = useState(searchParams.get('project') || '')
   const [filters, setFilters] = useState({
     status: '',
     severity: '',
@@ -57,8 +57,17 @@ const IssueList = () => {
     fetchProjects()
   }, [fetchProjects])
 
+  // Auto-select first project if none selected
   useEffect(() => {
-    fetchIssues({ project_id: projectId, ...filters })
+    if (!projectId && projectsList.length > 0) {
+      setProjectId(projectsList[0].project_id)
+    }
+  }, [projectId, projectsList])
+
+  useEffect(() => {
+    if (projectId) {
+      fetchIssues({ project_id: projectId, ...filters })
+    }
   }, [fetchIssues, projectId, filters])
 
   // Update URL when projectId changes

@@ -14,7 +14,7 @@ const WBSList = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-  const [projectId, setProjectId] = useState(searchParams.get('project') || 'PRJ001')
+  const [projectId, setProjectId] = useState(searchParams.get('project') || '')
   const [filters, setFilters] = useState({
     status: '',
     parent_wbs_id: '', // 新增父WBS ID篩選
@@ -68,6 +68,13 @@ const WBSList = () => {
     fetchSystemSettings()
   }, [fetchProjects, fetchSystemSettings])
 
+  // Auto-select first project if none selected
+  useEffect(() => {
+    if (!projectId && projectsList.length > 0) {
+      setProjectId(projectsList[0].project_id)
+    }
+  }, [projectId, projectsList])
+
   useEffect(() => {
     if (projectId) {
       const itemsPerPage = getSystemSetting('items_per_page', 1000)
@@ -76,9 +83,11 @@ const WBSList = () => {
   }, [fetchIssues, projectId, systemSettings, getSystemSetting])
 
   useEffect(() => {
-    const itemsPerPage = getSystemSetting('items_per_page', 1000)
-    const skip = (currentPage - 1) * itemsPerPage
-    fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+    if (projectId) {
+      const itemsPerPage = getSystemSetting('items_per_page', 1000)
+      const skip = (currentPage - 1) * itemsPerPage
+      fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+    }
   }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting])
 
   // Reset to page 1 when filters change

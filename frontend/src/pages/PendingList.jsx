@@ -15,7 +15,7 @@ const PendingList = () => {
   const [editingItem, setEditingItem] = useState(null)
   const [showReplyModal, setShowReplyModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
-  const [projectId, setProjectId] = useState(searchParams.get('project') || 'PRJ001')
+  const [projectId, setProjectId] = useState(searchParams.get('project') || '')
   const [filters, setFilters] = useState({
     status: '',
     source_type: '',
@@ -57,8 +57,17 @@ const PendingList = () => {
     fetchProjects()
   }, [fetchProjects])
 
+  // Auto-select first project if none selected
   useEffect(() => {
-    fetchPending({ project_id: projectId, ...filters })
+    if (!projectId && projectsList.length > 0) {
+      setProjectId(projectsList[0].project_id)
+    }
+  }, [projectId, projectsList])
+
+  useEffect(() => {
+    if (projectId) {
+      fetchPending({ project_id: projectId, ...filters })
+    }
   }, [fetchPending, projectId, filters])
 
   // Update URL when projectId changes

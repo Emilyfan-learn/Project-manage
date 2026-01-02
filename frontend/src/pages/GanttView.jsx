@@ -10,7 +10,7 @@ import GanttChart from '../components/GanttChart'
 
 const GanttView = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [projectId, setProjectId] = useState(searchParams.get('project') || 'PRJ001')
+  const [projectId, setProjectId] = useState(searchParams.get('project') || '')
   const [viewMode, setViewMode] = useState('Day')
   const [selectedTask, setSelectedTask] = useState(null)
   const [showTaskDetail, setShowTaskDetail] = useState(false)
@@ -28,6 +28,13 @@ const GanttView = () => {
     fetchProjects()
     fetchSystemSettings()
   }, [fetchProjects, fetchSystemSettings])
+
+  // Auto-select first project if none selected
+  useEffect(() => {
+    if (!projectId && projectsList.length > 0) {
+      setProjectId(projectsList[0].project_id)
+    }
+  }, [projectId, projectsList])
 
   // Apply default view mode from system settings
   useEffect(() => {
