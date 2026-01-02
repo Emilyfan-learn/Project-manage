@@ -1,14 +1,12 @@
 # Minimal dependencies for portable installation
-# CSV import/export works without additional dependencies (Python built-in)
-# CSV files can be opened directly in Excel
+# Uses Pydantic v1 (no compiled dependencies)
 
 # Core web framework
-fastapi==0.104.1
+fastapi==0.103.2
 uvicorn==0.24.0
 
-# Data validation
-pydantic==2.5.0
-pydantic-settings==2.1.0
+# Data validation (v1 - no pydantic-core needed)
+pydantic==1.10.13
 
 # Utilities
 python-dateutil==2.8.2
