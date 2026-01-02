@@ -4,6 +4,9 @@ Configuration settings for the Project Tracker application
 from pathlib import Path
 import os
 
+# Get the project root directory (parent of backend folder)
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+
 
 class Settings:
     """Application settings"""
@@ -17,16 +20,16 @@ class Settings:
     port: int = 8000
 
     # Database Settings
-    database_url: str = "sqlite+aiosqlite:///./data/project_tracking.db"
-    database_path: Path = Path(os.getenv("DATABASE_PATH", "./data/project_tracking.db"))
+    database_url: str = f"sqlite+aiosqlite:///{PROJECT_ROOT}/data/project_tracking.db"
+    database_path: Path = Path(os.getenv("DATABASE_PATH", PROJECT_ROOT / "data" / "project_tracking.db"))
 
     # Backup Settings
-    backup_base_path: Path = Path("./data/backups")
+    backup_base_path: Path = PROJECT_ROOT / "data" / "backups"
     backup_daily_retention_days: int = 30
     backup_weekly_retention_weeks: int = 12
 
     # Frontend Settings
-    frontend_build_path: Path = Path("./frontend/dist")
+    frontend_build_path: Path = PROJECT_ROOT / "frontend" / "dist"
 
     # CORS Settings
     cors_origins: list = [
