@@ -1,11 +1,11 @@
 # Minimal dependencies for portable installation
-# Uses Pydantic v1 (no compiled dependencies)
+# Compatible with Python 3.10 - 3.14
 
 # Core web framework
 fastapi==0.103.2
-uvicorn==0.24.0
+uvicorn>=0.24.0
 
-# Data validation (v1 - no pydantic-core needed)
+# Data validation (v1 - pure Python)
 pydantic==1.10.13
 
 # Utilities
