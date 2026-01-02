@@ -167,9 +167,10 @@ def create_database_schema():
             description TEXT,
 
             -- Schedule tracking
-            expected_reply_date DATE,
+            planned_start_date DATE,
+            expected_completion_date DATE,
             is_replied BOOLEAN DEFAULT 0,
-            actual_reply_date DATE,
+            actual_completion_date DATE,
 
             -- Handling information
             handling_notes TEXT,
@@ -325,6 +326,32 @@ def create_database_schema():
         )
     """)
 
+    # 10. System settings table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS system_settings (
+            setting_key TEXT PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            setting_type TEXT DEFAULT 'string',
+            description TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # 11. Project settings table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS project_settings (
+            setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT NOT NULL,
+            setting_key TEXT NOT NULL,
+            setting_value TEXT NOT NULL,
+            display_order INTEGER DEFAULT 0,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (project_id) REFERENCES projects(project_id)
+        )
+    """)
+
     # Create indexes for better query performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracking_items_project ON tracking_items(project_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracking_items_wbs ON tracking_items(wbs_id)")
@@ -340,6 +367,12 @@ def create_database_schema():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_issue_tracking_status ON issue_tracking(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(notification_type)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_project ON project_settings(project_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_key ON project_settings(setting_key)")
+
+    # Migrate existing tables - add missing columns
+    _migrate_pending_items(cursor)
+    _migrate_issue_tracking(cursor)
 
     # Commit changes
     conn.commit()
@@ -347,6 +380,43 @@ def create_database_schema():
 
     print("✓ Database schema created successfully")
     print(f"✓ Database location: {settings.database_path}")
+
+
+def _migrate_pending_items(cursor):
+    """Add missing columns to pending_items table"""
+    # Get existing columns
+    cursor.execute("PRAGMA table_info(pending_items)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+
+    # Add missing columns
+    migrations = [
+        ("planned_start_date", "DATE"),
+        ("expected_completion_date", "DATE"),
+        ("actual_completion_date", "DATE"),
+    ]
+
+    for column_name, column_type in migrations:
+        if column_name not in existing_columns:
+            try:
+                cursor.execute(f"ALTER TABLE pending_items ADD COLUMN {column_name} {column_type}")
+                print(f"  ✓ Added column: pending_items.{column_name}")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+
+
+def _migrate_issue_tracking(cursor):
+    """Add missing columns to issue_tracking table"""
+    # Get existing columns
+    cursor.execute("PRAGMA table_info(issue_tracking)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+
+    # Ensure actual_resolution_date exists
+    if "actual_resolution_date" not in existing_columns:
+        try:
+            cursor.execute("ALTER TABLE issue_tracking ADD COLUMN actual_resolution_date DATE")
+            print("  ✓ Added column: issue_tracking.actual_resolution_date")
+        except sqlite3.OperationalError:
+            pass
 
 
 if __name__ == "__main__":

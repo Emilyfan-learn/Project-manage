@@ -1,9 +1,10 @@
 /**
  * WBS Form Component for creating and editing WBS items
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import api from '../utils/api'
 import { useSettings } from '../hooks/useSettings'
+import { naturalSortWbsId } from '../hooks/useWBS'
 
 const WBSForm = ({ initialData = null, onSubmit, onCancel, projectId, availableWBSList = [] }) => {
   const [availableParents, setAvailableParents] = useState([])
@@ -86,7 +87,9 @@ const WBSForm = ({ initialData = null, onSubmit, onCancel, projectId, availableW
     const filteredItems = initialData
       ? availableWBSList.filter(item => item.item_id !== initialData.item_id)
       : availableWBSList
-    setAvailableParents(filteredItems)
+    // Apply natural sorting (1, 2, 10 instead of 1, 10, 2)
+    const sortedItems = [...filteredItems].sort(naturalSortWbsId)
+    setAvailableParents(sortedItems)
   }, [availableWBSList, initialData])
 
   // Fetch owner units for the project

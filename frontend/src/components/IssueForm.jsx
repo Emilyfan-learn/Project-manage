@@ -24,6 +24,8 @@ const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
     resolution: '',
     root_cause: '',
     target_resolution_date: '',
+    actual_resolution_date: '',
+    closed_date: '',
     reported_date: new Date().toISOString().split('T')[0],
     source: 'Manual',
   })
@@ -53,6 +55,8 @@ const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
       setFormData({
         ...initialData,
         target_resolution_date: initialData.target_resolution_date || '',
+        actual_resolution_date: initialData.actual_resolution_date || '',
+        closed_date: initialData.closed_date || '',
         reported_date: initialData.reported_date || '',
         estimated_impact_days: initialData.estimated_impact_days || '',
       })
@@ -504,6 +508,34 @@ const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
               id="target_resolution_date"
               name="target_resolution_date"
               value={formData.target_resolution_date}
+              onChange={handleChange}
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="actual_resolution_date" className="label">
+              實際解決日期
+            </label>
+            <input
+              type="date"
+              id="actual_resolution_date"
+              name="actual_resolution_date"
+              value={formData.actual_resolution_date}
+              onChange={handleChange}
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="closed_date" className="label">
+              結案日期
+            </label>
+            <input
+              type="date"
+              id="closed_date"
+              name="closed_date"
+              value={formData.closed_date}
               onChange={handleChange}
               className="input-field"
             />

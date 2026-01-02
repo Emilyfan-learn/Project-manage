@@ -14,6 +14,7 @@ const GanttView = () => {
   const [viewMode, setViewMode] = useState('Day')
   const [selectedTask, setSelectedTask] = useState(null)
   const [showTaskDetail, setShowTaskDetail] = useState(false)
+  const [parentFilter, setParentFilter] = useState('all') // 'all', 'parents', 'children'
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
     endDate: ''
@@ -67,10 +68,20 @@ const GanttView = () => {
     alert(`任務 ${taskId} 日期已更改:\n開始: ${start.toLocaleDateString('zh-TW')}\n結束: ${end.toLocaleDateString('zh-TW')}`)
   }
 
-  // Filter WBS list by date range
+  // Filter WBS list by date range and parent filter
   const filteredWbsList = wbsList.filter(item => {
+    // Apply parent filter
+    if (parentFilter === 'parents') {
+      // Only show items with no parent (top-level)
+      if (item.parent_id) return false
+    } else if (parentFilter === 'children') {
+      // Only show items with a parent
+      if (!item.parent_id) return false
+    }
+
+    // Apply date filter
     if (!dateFilter.startDate && !dateFilter.endDate) {
-      return true // No filter applied
+      return true // No date filter applied
     }
 
     // Get the relevant date (use revised if available, otherwise original)
@@ -96,19 +107,27 @@ const GanttView = () => {
     }))
   }
 
-  const clearDateFilter = () => {
+  const clearFilters = () => {
     setDateFilter({
       startDate: '',
       endDate: ''
     })
+    setParentFilter('all')
   }
 
   const viewModes = [
-    { value: 'Quarter Day', label: '季日' },
+    { value: 'Quarter Day', label: '6小時' },
     { value: 'Half Day', label: '半日' },
     { value: 'Day', label: '日' },
     { value: 'Week', label: '週' },
     { value: 'Month', label: '月' },
+    { value: 'Year', label: '年' },
+  ]
+
+  const parentFilterOptions = [
+    { value: 'all', label: '全部' },
+    { value: 'parents', label: '僅父項目' },
+    { value: 'children', label: '僅子項目' },
   ]
 
   return (
@@ -148,7 +167,7 @@ const GanttView = () => {
           {/* View Mode Selection */}
           <div>
             <label htmlFor="view-mode" className="label">
-              檢視模式
+              縮放
             </label>
             <select
               id="view-mode"
@@ -159,6 +178,25 @@ const GanttView = () => {
               {viewModes.map((mode) => (
                 <option key={mode.value} value={mode.value}>
                   {mode.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Parent Filter */}
+          <div>
+            <label htmlFor="parent-filter" className="label">
+              層級篩選
+            </label>
+            <select
+              id="parent-filter"
+              value={parentFilter}
+              onChange={(e) => setParentFilter(e.target.value)}
+              className="input-field"
+            >
+              {parentFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -194,10 +232,10 @@ const GanttView = () => {
           </div>
 
           {/* Clear Filter Button */}
-          {(dateFilter.startDate || dateFilter.endDate) && (
+          {(dateFilter.startDate || dateFilter.endDate || parentFilter !== 'all') && (
             <div className="mt-6">
               <button
-                onClick={clearDateFilter}
+                onClick={clearFilters}
                 className="btn-secondary"
               >
                 清除篩選
@@ -221,7 +259,7 @@ const GanttView = () => {
 
           {/* Stats */}
           <div className="ml-auto text-sm text-gray-600">
-            {dateFilter.startDate || dateFilter.endDate ? (
+            {dateFilter.startDate || dateFilter.endDate || parentFilter !== 'all' ? (
               <>顯示 {filteredWbsList.length} / {wbsList.length} 個任務</>
             ) : (
               <>共 {wbsList.length} 個任務</>

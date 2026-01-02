@@ -1,8 +1,8 @@
 /**
  * Pending Item Form Component
  */
-import React, { useState, useEffect } from 'react'
-import { useWBS } from '../hooks/useWBS'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useWBS, naturalSortWbsId } from '../hooks/useWBS'
 import { useIssues } from '../hooks/useIssues'
 import { useProjects } from '../hooks/useProjects'
 
@@ -38,6 +38,11 @@ const PendingForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
   const { wbsList, fetchWBS } = useWBS()
   const { issuesList, fetchIssues } = useIssues()
   const { projectsList, fetchProjects } = useProjects()
+
+  // Sort WBS list naturally (1, 2, 10 instead of 1, 10, 2)
+  const sortedWbsList = useMemo(() => {
+    return [...(wbsList || [])].sort(naturalSortWbsId)
+  }, [wbsList])
 
   useEffect(() => {
     fetchProjects()
@@ -338,8 +343,8 @@ const PendingForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
               className="input-field"
             >
               <option value="">-- 請選擇 WBS --</option>
-              {wbsList && wbsList.length > 0 ? (
-                wbsList.map((wbs) => (
+              {sortedWbsList && sortedWbsList.length > 0 ? (
+                sortedWbsList.map((wbs) => (
                   <option key={wbs.item_id} value={wbs.wbs_id}>
                     {wbs.wbs_id} - {wbs.task_name}
                   </option>

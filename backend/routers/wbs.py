@@ -37,6 +37,8 @@ async def create_wbs(wbs_data: WBSCreate):
 async def get_wbs_list(
     project_id: Optional[str] = Query(None, description="Filter by project ID"),
     status: Optional[str] = Query(None, description="Filter by status"),
+    include_internal: bool = Query(True, description="Include internal items"),
+    exclude_completed: bool = Query(False, description="Exclude completed/cancelled items"),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of items to return"),
 ):
@@ -45,6 +47,8 @@ async def get_wbs_list(
 
     - **project_id**: Filter by project
     - **status**: Filter by status (未開始/進行中/已完成)
+    - **include_internal**: Include internal arrangement items (default: true)
+    - **exclude_completed**: Exclude completed/cancelled items (default: false)
     - **skip**: Pagination offset
     - **limit**: Number of items per page
     """
@@ -52,7 +56,9 @@ async def get_wbs_list(
         project_id=project_id,
         status=status,
         skip=skip,
-        limit=limit
+        limit=limit,
+        include_internal=include_internal,
+        exclude_completed=exclude_completed
     )
     total = wbs_service.get_wbs_count(project_id=project_id)
 
@@ -60,14 +66,24 @@ async def get_wbs_list(
 
 
 @router.get("/tree/{project_id}")
-async def get_wbs_tree(project_id: str):
+async def get_wbs_tree(
+    project_id: str,
+    include_internal: bool = Query(True, description="Include internal items"),
+    exclude_completed: bool = Query(False, description="Exclude completed/cancelled items"),
+):
     """
     Get WBS items in tree structure for a project
 
     Returns hierarchical tree based on parent-child relationships
+    - **include_internal**: Include internal arrangement items (default: true)
+    - **exclude_completed**: Exclude completed/cancelled items (default: false)
     """
     try:
-        tree = wbs_service.get_wbs_tree(project_id)
+        tree = wbs_service.get_wbs_tree(
+            project_id,
+            include_internal=include_internal,
+            exclude_completed=exclude_completed
+        )
         return {"project_id": project_id, "tree": tree}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

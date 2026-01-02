@@ -4,6 +4,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../utils/api'
 
+/**
+ * Natural sort comparator for WBS IDs like "1", "2", "10", "1.1", "1.2", "1.10"
+ */
+const naturalSortWbsId = (a, b) => {
+  const aParts = (a.wbs_id || '').split('.').map(p => parseInt(p) || 0)
+  const bParts = (b.wbs_id || '').split('.').map(p => parseInt(p) || 0)
+
+  const maxLen = Math.max(aParts.length, bParts.length)
+  for (let i = 0; i < maxLen; i++) {
+    const aVal = aParts[i] || 0
+    const bVal = bParts[i] || 0
+    if (aVal !== bVal) return aVal - bVal
+  }
+  return 0
+}
+
 export const useWBS = (projectId = null) => {
   const [wbsList, setWbsList] = useState([])
   const [loading, setLoading] = useState(false)
@@ -22,7 +38,9 @@ export const useWBS = (projectId = null) => {
       }
 
       const response = await api.get('/wbs/', { params })
-      setWbsList(response.items || [])
+      // Apply natural sorting to ensure correct order (1, 2, 10 not 1, 10, 2)
+      const sortedItems = [...(response.items || [])].sort(naturalSortWbsId)
+      setWbsList(sortedItems)
       setTotal(response.total || 0)
     } catch (err) {
       setError(err.message)
@@ -156,5 +174,9 @@ export const useWBS = (projectId = null) => {
     updateWBS,
     deleteWBS,
     createWBSBatch,
+    naturalSortWbsId,
   }
 }
+
+// Export natural sort function for use in other components
+export { naturalSortWbsId }

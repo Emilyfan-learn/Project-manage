@@ -40,7 +40,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs (keeping frontend/dist for portable version)
-# frontend/dist/
+!frontend/dist/
 frontend/build/
 
 # Environment variables

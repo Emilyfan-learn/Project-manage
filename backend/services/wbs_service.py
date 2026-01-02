@@ -14,6 +14,19 @@ class WBSService:
     def __init__(self):
         self.db_path = str(settings.database_path)
 
+    def _natural_sort_key(self, wbs_id: str) -> list:
+        """Generate a sort key for natural sorting of WBS IDs like '1.2.10'"""
+        if not wbs_id:
+            return [0]
+        parts = wbs_id.split('.')
+        result = []
+        for part in parts:
+            try:
+                result.append(int(part))
+            except ValueError:
+                result.append(0)
+        return result
+
     def _get_connection(self):
         """Get database connection"""
         conn = sqlite3.connect(self.db_path)
@@ -174,7 +187,9 @@ class WBSService:
         project_id: Optional[str] = None,
         status: Optional[str] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        include_internal: bool = True,
+        exclude_completed: bool = False
     ) -> List[WBSResponse]:
         """Get list of WBS items with filters"""
         conn = self._get_connection()
@@ -191,8 +206,11 @@ class WBSService:
             query += " AND status = ?"
             params.append(status)
 
-        query += " ORDER BY wbs_id LIMIT ? OFFSET ?"
-        params.extend([limit, skip])
+        if not include_internal:
+            query += " AND (is_internal = 0 OR is_internal IS NULL)"
+
+        if exclude_completed:
+            query += " AND status NOT IN ('已完成', '已取消')"
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
@@ -205,7 +223,11 @@ class WBSService:
             item_dict.update(metrics)
             items.append(WBSResponse(**item_dict))
 
-        return items
+        # Natural sort by wbs_id
+        items.sort(key=lambda x: self._natural_sort_key(x.wbs_id))
+
+        # Apply pagination after sorting
+        return items[skip:skip + limit]
 
     def get_wbs_count(self, project_id: Optional[str] = None) -> int:
         """Get total count of WBS items"""
@@ -309,9 +331,19 @@ class WBSService:
 
         return True
 
-    def get_wbs_tree(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_wbs_tree(
+        self,
+        project_id: str,
+        include_internal: bool = True,
+        exclude_completed: bool = False
+    ) -> List[Dict[str, Any]]:
         """Get WBS items in tree structure"""
-        items = self.get_wbs_list(project_id=project_id, limit=1000)
+        items = self.get_wbs_list(
+            project_id=project_id,
+            limit=10000,
+            include_internal=include_internal,
+            exclude_completed=exclude_completed
+        )
 
         # Build tree structure
         items_dict = {item.item_id: item.model_dump() for item in items}
@@ -330,6 +362,14 @@ class WBSService:
             else:
                 root_items.append(item)
 
+        # Sort root items and children naturally
+        def sort_tree(items_list):
+            items_list.sort(key=lambda x: self._natural_sort_key(x['wbs_id']))
+            for item in items_list:
+                if item['children']:
+                    sort_tree(item['children'])
+
+        sort_tree(root_items)
         return root_items
 
     def get_children(self, item_id: str) -> List[WBSResponse]:
@@ -340,7 +380,6 @@ class WBSService:
         cursor.execute("""
             SELECT * FROM tracking_items
             WHERE parent_id = ? AND item_type = 'WBS'
-            ORDER BY wbs_id
         """, (item_id,))
 
         rows = cursor.fetchall()
@@ -353,4 +392,6 @@ class WBSService:
             item_dict.update(metrics)
             items.append(WBSResponse(**item_dict))
 
+        # Natural sort by wbs_id
+        items.sort(key=lambda x: self._natural_sort_key(x.wbs_id))
         return items

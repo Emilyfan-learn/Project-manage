@@ -42,7 +42,7 @@ const GanttChart = ({ tasks, viewMode = 'Day', onTaskClick, onDateChange }) => {
 
       const taskData = {
         id: task.wbs_id,
-        name: task.task_name || task.wbs_id,
+        name: `${task.wbs_id} ${task.task_name || ''}`.trim(),
         start: start,
         end: finalEnd,
         progress: task.actual_progress || 0,
