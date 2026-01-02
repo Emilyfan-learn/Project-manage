@@ -337,6 +337,22 @@ def create_database_schema():
         )
     """)
 
+    # Insert default system settings
+    default_settings = [
+        ('date_format', 'yyyy/MM/dd', 'string', '日期格式'),
+        ('items_per_page', '100', 'number', '每頁顯示筆數'),
+        ('default_view_mode', 'Day', 'string', '預設視圖模式'),
+        ('auto_save_interval', '30', 'number', '自動儲存間隔(秒)'),
+        ('show_weekend', 'true', 'boolean', '顯示週末'),
+        ('highlight_overdue', 'true', 'boolean', '標記逾期項目'),
+        ('default_project_id', 'PRJ001', 'string', '預設專案'),
+    ]
+    for key, value, type_, desc in default_settings:
+        cursor.execute("""
+            INSERT OR IGNORE INTO system_settings (setting_key, setting_value, setting_type, description)
+            VALUES (?, ?, ?, ?)
+        """, (key, value, type_, desc))
+
     # 11. Project settings table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS project_settings (

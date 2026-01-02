@@ -54,15 +54,18 @@ class SettingsService:
         return [SystemSettingResponse(**dict(row)) for row in rows]
 
     def update_system_setting(self, setting_key: str, update_data: SystemSettingUpdate) -> Optional[SystemSettingResponse]:
-        """Update a system setting"""
+        """Update a system setting (uses INSERT OR REPLACE to handle missing keys)"""
         conn = self._get_connection()
         cursor = conn.cursor()
 
+        # Use INSERT OR REPLACE to handle both update and create cases
         cursor.execute("""
-            UPDATE system_settings
-            SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE setting_key = ?
-        """, (update_data.setting_value, setting_key))
+            INSERT OR REPLACE INTO system_settings (setting_key, setting_value, setting_type, description, updated_at)
+            VALUES (?, ?,
+                COALESCE((SELECT setting_type FROM system_settings WHERE setting_key = ?), 'string'),
+                COALESCE((SELECT description FROM system_settings WHERE setting_key = ?), ?),
+                CURRENT_TIMESTAMP)
+        """, (setting_key, update_data.setting_value, setting_key, setting_key, setting_key))
 
         conn.commit()
         conn.close()
