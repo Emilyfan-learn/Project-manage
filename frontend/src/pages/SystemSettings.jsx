@@ -43,16 +43,21 @@ const SystemSettings = () => {
     setSuccessMessage('')
 
     try {
-      // Update each changed setting
+      // Update each setting (both existing and new)
       const promises = Object.keys(formData).map(key => {
         const setting = systemSettings.find(s => s.setting_key === key)
-        if (setting && setting.setting_value !== formData[key]) {
+        // Update if setting doesn't exist OR value has changed
+        if (!setting || setting.setting_value !== formData[key]) {
           return updateSystemSetting(key, formData[key])
         }
         return null
       })
 
       await Promise.all(promises.filter(p => p !== null))
+
+      // Refresh settings from server
+      await fetchSystemSettings()
+
       setSuccessMessage('設定已成功儲存！')
 
       // Auto-hide success message after 3 seconds
