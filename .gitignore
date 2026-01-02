@@ -84,5 +84,5 @@ htmlcov/
 *.tmp
 *.temp
 
-# Offline packages (user-generated)
-packages/
+# Offline packages - now included for portable distribution
+# packages/
