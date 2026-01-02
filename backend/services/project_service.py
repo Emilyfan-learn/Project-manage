@@ -289,7 +289,7 @@ class ProjectService:
             SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN is_replied = 1 THEN 1 ELSE 0 END) as replied,
-                SUM(CASE WHEN expected_reply_date < date('now') AND is_replied = 0 THEN 1 ELSE 0 END) as overdue
+                SUM(CASE WHEN expected_completion_date < date('now') AND is_replied = 0 THEN 1 ELSE 0 END) as overdue
             FROM pending_items
             WHERE project_id = ?
         """, (project_id,))

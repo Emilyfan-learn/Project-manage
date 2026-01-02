@@ -404,7 +404,7 @@ class ExcelService:
             cursor.execute("""
                 SELECT
                     pending_id, task_date, source_type, contact_info, description,
-                    expected_reply_date, is_replied, actual_reply_date,
+                    expected_completion_date, is_replied, actual_completion_date,
                     handling_notes, related_wbs, related_action_item,
                     status, priority
                 FROM pending_items
@@ -447,9 +447,9 @@ class ExcelService:
                     row['source_type'],
                     row['contact_info'],
                     row['description'],
-                    row['expected_reply_date'],
+                    row['expected_completion_date'],
                     '是' if row['is_replied'] else '否',
-                    row['actual_reply_date'],
+                    row['actual_completion_date'],
                     row['handling_notes'],
                     row['related_wbs'],
                     row['related_action_item'],

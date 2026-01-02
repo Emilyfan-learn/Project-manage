@@ -296,7 +296,7 @@ class CSVService:
             cursor.execute("""
                 SELECT
                     pending_id, task_date, source_type, contact_info, description,
-                    expected_reply_date, is_replied, actual_reply_date,
+                    expected_completion_date, is_replied, actual_completion_date,
                     handling_notes, related_wbs, status, priority
                 FROM pending_items
                 WHERE project_id = ?
@@ -330,9 +330,9 @@ class CSVService:
                     row['source_type'] or '',
                     row['contact_info'] or '',
                     row['description'] or '',
-                    row['expected_reply_date'] or '',
+                    row['expected_completion_date'] or '',
                     '是' if row['is_replied'] else '否',
-                    row['actual_reply_date'] or '',
+                    row['actual_completion_date'] or '',
                     row['handling_notes'] or '',
                     row['related_wbs'] or '',
                     row['status'] or '',
