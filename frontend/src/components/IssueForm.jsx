@@ -1,9 +1,10 @@
 /**
  * Issue Form Component
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useWBS } from '../hooks/useWBS'
 import { useProjects } from '../hooks/useProjects'
+import { useSettings } from '../hooks/useSettings'
 
 const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
   const [formData, setFormData] = useState({
@@ -36,11 +37,32 @@ const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
   // Fetch WBS for dropdown options
   const { wbsList, fetchWBS } = useWBS()
   const { projectsList, fetchProjects } = useProjects()
+  const { fetchOwnerUnits } = useSettings()
+  const [ownerUnits, setOwnerUnits] = useState([])
 
   useEffect(() => {
     fetchProjects()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Fetch owner units when project changes
+  useEffect(() => {
+    if (formData.project_id) {
+      fetchOwnerUnits(formData.project_id).then(units => {
+        setOwnerUnits(units || [])
+      }).catch(() => setOwnerUnits([]))
+    }
+  }, [formData.project_id, fetchOwnerUnits])
+
+  // Get unique assignees from WBS list as fallback options
+  const assigneeOptions = useMemo(() => {
+    const fromWBS = wbsList
+      .map(w => w.owner_unit)
+      .filter(Boolean)
+    const fromSettings = ownerUnits
+    const all = [...new Set([...fromSettings, ...fromWBS])]
+    return all.sort()
+  }, [wbsList, ownerUnits])
 
   useEffect(() => {
     if (formData.project_id) {
@@ -335,14 +357,25 @@ const IssueForm = ({ initialData = null, onSubmit, onCancel, projectId }) => {
             <label htmlFor="assigned_to" className="label">
               指派給
             </label>
-            <input
-              type="text"
+            <select
               id="assigned_to"
               name="assigned_to"
               value={formData.assigned_to}
               onChange={handleChange}
               className="input-field"
-            />
+            >
+              <option value="">-- 請選擇 --</option>
+              {assigneeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            {assigneeOptions.length === 0 && (
+              <p className="mt-1 text-sm text-gray-500">
+                提示：請先在 WBS 管理中設定單位
+              </p>
+            )}
           </div>
 
           <div>

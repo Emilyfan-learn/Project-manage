@@ -671,7 +671,7 @@ const IssueList = () => {
                     目標解決日期
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    指派給
+                    實際解決日期
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     狀態
@@ -729,8 +729,8 @@ const IssueList = () => {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                         {item.target_resolution_date || '-'}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.assigned_to || '-'}
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {item.actual_resolution_date || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span
