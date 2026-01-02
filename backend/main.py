@@ -4,6 +4,7 @@ FastAPI main application entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pathlib import Path
 from backend.config import settings
 from backend.init_db import create_database_schema
@@ -32,15 +33,17 @@ async def startup_event():
     """
     print(f"Starting {settings.app_name} v{settings.app_version}")
     print(f"Server: http://{settings.host}:{settings.port}")
+    print(f"Frontend path: {settings.frontend_build_path}")
+    print(f"Frontend exists: {settings.frontend_build_path.exists()}")
 
     # Create database schema if it doesn't exist
     create_database_schema()
 
 
-@app.get("/")
-async def root():
+@app.get("/api")
+async def api_root():
     """
-    Root endpoint
+    API root endpoint
     """
     return {
         "app_name": settings.app_name,
@@ -86,16 +89,39 @@ except ImportError:
 app.include_router(dependencies.router, prefix="/api/dependencies", tags=["Dependencies"])
 app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
 
-# TODO: Add other routers
-# from backend.routers import reports, gantt, notifications
-# app.include_router(pending.router, prefix="/api/pending", tags=["pending"])
-# app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
-# app.include_router(gantt.router, prefix="/api/gantt", tags=["gantt"])
-# app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
-
-# Serve frontend static files (after build)
+# Serve frontend static files
 if settings.frontend_build_path.exists():
-    app.mount("/", StaticFiles(directory=str(settings.frontend_build_path), html=True), name="frontend")
+    # Mount static assets
+    app.mount("/assets", StaticFiles(directory=str(settings.frontend_build_path / "assets")), name="assets")
+
+    # Serve index.html for root and all other non-API routes
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse(str(settings.frontend_build_path / "index.html"))
+
+    # Catch-all route for SPA - serve index.html for any unmatched routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Don't serve index.html for API routes
+        if full_path.startswith("api/") or full_path.startswith("health"):
+            return {"error": "Not found"}
+
+        file_path = settings.frontend_build_path / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(settings.frontend_build_path / "index.html"))
+
+    print("✓ Frontend static files enabled")
+else:
+    @app.get("/")
+    async def root():
+        return {
+            "app_name": settings.app_name,
+            "version": settings.app_version,
+            "message": "Project Tracker API is running",
+            "note": "Frontend not found. Build frontend with: cd frontend && npm run build"
+        }
+    print("⚠ Frontend not found at:", settings.frontend_build_path)
 
 
 if __name__ == "__main__":
