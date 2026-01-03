@@ -31,7 +31,8 @@ const GanttView = () => {
 
   // Auto-select default project or first project if none selected
   useEffect(() => {
-    if (!projectId && projectsList.length > 0) {
+    // Wait for both projectsList and systemSettings to be loaded
+    if (!projectId && projectsList.length > 0 && systemSettings.length > 0) {
       const defaultProject = getSystemSetting('default_project_id', '')
       const projectExists = projectsList.some(p => p.project_id === defaultProject)
       setProjectId(projectExists ? defaultProject : projectsList[0].project_id)
