@@ -22,6 +22,8 @@ const WBSList = () => {
   const [smartFilters, setSmartFilters] = useState({
     overdueOnly: false,
     dueThisWeek: false,
+    notCompleted: false,
+    internalOnly: false,
     ownerUnit: '',
     wbsCode: '',
   })
@@ -451,6 +453,21 @@ const WBSList = () => {
       })
     }
 
+    // Filter: Not completed (exclude 已完成)
+    if (smartFilters.notCompleted) {
+      filtered = filtered.filter((item) => item.status !== '已完成')
+    }
+
+    // Filter: Status dropdown with special "not_completed" option
+    if (filters.status === 'not_completed') {
+      filtered = filtered.filter((item) => item.status !== '已完成')
+    }
+
+    // Filter: Internal only (is_internal = true)
+    if (smartFilters.internalOnly) {
+      filtered = filtered.filter((item) => item.is_internal === true)
+    }
+
     // Build hierarchy tree
     const tree = buildHierarchyTree(filtered)
     // Flatten for display based on expand/collapse state
@@ -609,6 +626,7 @@ const WBSList = () => {
               className="input-field"
             >
               <option value="">全部</option>
+              <option value="not_completed">未完成</option>
               <option value="未開始">未開始</option>
               <option value="進行中">進行中</option>
               <option value="已完成">已完成</option>
@@ -690,13 +708,41 @@ const WBSList = () => {
               <span className="text-gray-700">只看本週到期</span>
             </label>
 
+            {/* Not Completed Filter */}
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={smartFilters.notCompleted}
+                onChange={(e) =>
+                  setSmartFilters({ ...smartFilters, notCompleted: e.target.checked })
+                }
+                className="mr-2 rounded"
+              />
+              <span className="text-gray-700">未完成</span>
+            </label>
+
+            {/* Internal Only Filter */}
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={smartFilters.internalOnly}
+                onChange={(e) =>
+                  setSmartFilters({ ...smartFilters, internalOnly: e.target.checked })
+                }
+                className="mr-2 rounded"
+              />
+              <span className="text-gray-700">內部安排</span>
+            </label>
+
             {/* Clear All Filters Button */}
-            {(smartFilters.ownerUnit || smartFilters.wbsCode || smartFilters.overdueOnly || smartFilters.dueThisWeek) && (
+            {(smartFilters.ownerUnit || smartFilters.wbsCode || smartFilters.overdueOnly || smartFilters.dueThisWeek || smartFilters.notCompleted || smartFilters.internalOnly) && (
               <button
                 onClick={() =>
                   setSmartFilters({
                     overdueOnly: false,
                     dueThisWeek: false,
+                    notCompleted: false,
+                    internalOnly: false,
                     ownerUnit: '',
                     wbsCode: '',
                   })
