@@ -86,6 +86,7 @@ class WBSResponse(WBSBase):
     estimated_progress: Optional[int] = None
     progress_variance: Optional[int] = None
     is_overdue: bool = False
+    is_behind_schedule: bool = False  # True if progress_variance exceeds threshold
 
     # Metadata
     source: Optional[str] = "Manual"

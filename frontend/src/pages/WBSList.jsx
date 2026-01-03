@@ -22,6 +22,7 @@ const WBSList = () => {
   })
   const [smartFilters, setSmartFilters] = useState({
     overdueOnly: false,
+    behindScheduleOnly: false,
     dueThisWeek: false,
     notCompleted: false,
     internalOnly: false,
@@ -92,6 +93,7 @@ const WBSList = () => {
   // Check if any frontend-only filters are active
   const hasFrontendFilters = filters.parent_wbs_id ||
     smartFilters.overdueOnly ||
+    smartFilters.behindScheduleOnly ||
     smartFilters.dueThisWeek ||
     smartFilters.notCompleted ||
     smartFilters.internalOnly ||
@@ -462,6 +464,11 @@ const WBSList = () => {
       filtered = filtered.filter((item) => item.is_overdue === true)
     }
 
+    // Filter: Only behind schedule items (progress lag threshold exceeded)
+    if (smartFilters.behindScheduleOnly) {
+      filtered = filtered.filter((item) => item.is_behind_schedule === true)
+    }
+
     // Filter: Due this week
     if (smartFilters.dueThisWeek) {
       const today = new Date()
@@ -730,6 +737,22 @@ const WBSList = () => {
               </span>
             </label>
 
+            {/* Behind Schedule Only Filter */}
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={smartFilters.behindScheduleOnly}
+                onChange={(e) =>
+                  setSmartFilters({ ...smartFilters, behindScheduleOnly: e.target.checked })
+                }
+                className="mr-2 rounded"
+              />
+              <span className="text-gray-700 flex items-center">
+                只看進度落後
+                <span className="ml-1 text-yellow-500">📉</span>
+              </span>
+            </label>
+
             {/* Due This Week Filter */}
             <label className="flex items-center text-sm">
               <input
@@ -770,11 +793,12 @@ const WBSList = () => {
             </label>
 
             {/* Clear All Filters Button */}
-            {(smartFilters.ownerUnit || smartFilters.wbsCode || smartFilters.overdueOnly || smartFilters.dueThisWeek || smartFilters.notCompleted || smartFilters.internalOnly) && (
+            {(smartFilters.ownerUnit || smartFilters.wbsCode || smartFilters.overdueOnly || smartFilters.behindScheduleOnly || smartFilters.dueThisWeek || smartFilters.notCompleted || smartFilters.internalOnly) && (
               <button
                 onClick={() =>
                   setSmartFilters({
                     overdueOnly: false,
+                    behindScheduleOnly: false,
                     dueThisWeek: false,
                     notCompleted: false,
                     internalOnly: false,
@@ -943,7 +967,10 @@ const WBSList = () => {
                             {item.task_name}
                           </span>
                           {item.is_overdue && (
-                            <span className="text-red-500">⚠️</span>
+                            <span className="text-red-500" title="逾期">⚠️</span>
+                          )}
+                          {item.is_behind_schedule && !item.is_overdue && (
+                            <span className="text-yellow-500" title="進度落後">📉</span>
                           )}
                           {(() => {
                             const issueCount = getRelatedIssuesCount(item.wbs_id)

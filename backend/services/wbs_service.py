@@ -109,6 +109,7 @@ class WBSService:
         # Get system settings
         include_weekends = self._get_system_setting('include_weekends', True)
         overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
+        progress_lag_threshold = self._get_system_setting('progress_lag_threshold', 10)
 
         # Calculate estimated progress based on dates
         estimated_progress = 0
@@ -135,6 +136,12 @@ class WBSService:
         actual_progress = item.get('actual_progress', 0) or 0
         progress_variance = actual_progress - estimated_progress
 
+        # Check if behind schedule based on threshold
+        # If progress_variance is negative and exceeds threshold, mark as behind
+        is_behind_schedule = False
+        if item.get('status') != '已完成' and progress_variance < 0:
+            is_behind_schedule = abs(progress_variance) >= progress_lag_threshold
+
         # Check if overdue (with warning days)
         # Priority: Use revised end date if available, otherwise use original end date
         is_overdue = False
@@ -152,7 +159,8 @@ class WBSService:
         return {
             'estimated_progress': estimated_progress,
             'progress_variance': progress_variance,
-            'is_overdue': is_overdue
+            'is_overdue': is_overdue,
+            'is_behind_schedule': is_behind_schedule
         }
 
     def create_wbs(self, wbs_data: WBSCreate) -> WBSResponse:
