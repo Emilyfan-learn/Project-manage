@@ -75,7 +75,7 @@ class IssueService:
         days_open = 0
 
         # Get overdue warning days from settings
-        overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
+        overdue_warning_days = int(self._get_system_setting('overdue_warning_days', 0))
 
         # Calculate days open
         if item.get('reported_date'):

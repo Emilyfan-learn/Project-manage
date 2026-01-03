@@ -108,8 +108,8 @@ class WBSService:
 
         # Get system settings
         include_weekends = self._get_system_setting('include_weekends', True)
-        overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
-        progress_lag_threshold = self._get_system_setting('progress_lag_threshold', 10)
+        overdue_warning_days = int(self._get_system_setting('overdue_warning_days', 0))
+        progress_lag_threshold = int(self._get_system_setting('progress_lag_threshold', 10))
 
         # Calculate estimated progress based on dates
         estimated_progress = 0

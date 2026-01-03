@@ -61,7 +61,7 @@ class PendingService:
         days_until_due = None
 
         # Get overdue warning days from settings
-        overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
+        overdue_warning_days = int(self._get_system_setting('overdue_warning_days', 0))
 
         if item.get('expected_completion_date') and not item.get('is_replied'):
             try:
