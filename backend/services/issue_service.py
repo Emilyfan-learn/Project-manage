@@ -2,7 +2,7 @@
 Business logic service for Issue Tracking
 """
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import List, Optional, Dict, Any
 from backend.config import settings
 from backend.models.issue import (
@@ -16,6 +16,38 @@ class IssueService:
 
     def __init__(self):
         self.db_path = str(settings.database_path)
+        self._settings_cache = {}
+        self._settings_cache_time = None
+
+    def _get_system_setting(self, key: str, default: Any = None) -> Any:
+        """Get system setting value with caching"""
+        now = datetime.now()
+        if self._settings_cache_time is None or (now - self._settings_cache_time).seconds > 60:
+            self._settings_cache = {}
+            self._settings_cache_time = now
+
+        if key not in self._settings_cache:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT setting_value, setting_type FROM system_settings WHERE setting_key = ?", (key,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                value, setting_type = row['setting_value'], row['setting_type']
+                if setting_type == 'number':
+                    try:
+                        self._settings_cache[key] = int(value)
+                    except ValueError:
+                        self._settings_cache[key] = float(value)
+                elif setting_type == 'boolean':
+                    self._settings_cache[key] = value.lower() in ['true', '1', 'yes']
+                else:
+                    self._settings_cache[key] = value
+            else:
+                self._settings_cache[key] = default
+
+        return self._settings_cache.get(key, default)
 
     def _get_connection(self):
         """Get database connection"""
@@ -42,6 +74,9 @@ class IssueService:
         is_overdue = False
         days_open = 0
 
+        # Get overdue warning days from settings
+        overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
+
         # Calculate days open
         if item.get('reported_date'):
             try:
@@ -54,11 +89,13 @@ class IssueService:
             except (ValueError, TypeError):
                 pass
 
-        # Check if overdue
+        # Check if overdue (with warning days)
         if item.get('target_resolution_date') and item.get('status') not in ['Resolved', 'Closed']:
             try:
                 target_date = datetime.strptime(item['target_resolution_date'], '%Y-%m-%d').date()
-                is_overdue = date.today() > target_date
+                # Apply warning days - mark as overdue N days before actual due date
+                warning_date = target_date - timedelta(days=overdue_warning_days)
+                is_overdue = date.today() > warning_date
             except (ValueError, TypeError):
                 pass
 

@@ -2,7 +2,7 @@
 Business logic service for WBS items
 """
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import List, Optional, Dict, Any
 from backend.config import settings
 from backend.models.wbs import WBSCreate, WBSUpdate, WBSResponse
@@ -13,6 +13,53 @@ class WBSService:
 
     def __init__(self):
         self.db_path = str(settings.database_path)
+        self._settings_cache = {}
+        self._settings_cache_time = None
+
+    def _get_system_setting(self, key: str, default: Any = None) -> Any:
+        """Get system setting value with caching"""
+        # Refresh cache every 60 seconds
+        now = datetime.now()
+        if self._settings_cache_time is None or (now - self._settings_cache_time).seconds > 60:
+            self._settings_cache = {}
+            self._settings_cache_time = now
+
+        if key not in self._settings_cache:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT setting_value, setting_type FROM system_settings WHERE setting_key = ?", (key,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                value, setting_type = row['setting_value'], row['setting_type']
+                if setting_type == 'number':
+                    try:
+                        self._settings_cache[key] = int(value)
+                    except ValueError:
+                        self._settings_cache[key] = float(value)
+                elif setting_type == 'boolean':
+                    self._settings_cache[key] = value.lower() in ['true', '1', 'yes']
+                else:
+                    self._settings_cache[key] = value
+            else:
+                self._settings_cache[key] = default
+
+        return self._settings_cache.get(key, default)
+
+    def _count_work_days(self, start_date: date, end_date: date, include_weekends: bool = True) -> int:
+        """Count work days between two dates"""
+        if include_weekends:
+            return (end_date - start_date).days
+
+        # Exclude weekends
+        work_days = 0
+        current = start_date
+        while current <= end_date:
+            if current.weekday() < 5:  # Monday = 0, Friday = 4
+                work_days += 1
+            current += timedelta(days=1)
+        return work_days
 
     def _natural_sort_key(self, wbs_id: str) -> list:
         """Generate a sort key for natural sorting of WBS IDs like '1.2.10'"""
@@ -59,6 +106,10 @@ class WBSService:
             start_date = item['original_planned_start']
             end_date = item['original_planned_end']
 
+        # Get system settings
+        include_weekends = self._get_system_setting('include_weekends', True)
+        overdue_warning_days = self._get_system_setting('overdue_warning_days', 0)
+
         # Calculate estimated progress based on dates
         estimated_progress = 0
         if start_date and end_date:
@@ -72,9 +123,11 @@ class WBSService:
                 elif today <= start:
                     estimated_progress = 0
                 else:
-                    total_days = (end - start).days
-                    elapsed_days = (today - start).days
-                    estimated_progress = int((elapsed_days / total_days) * 100)
+                    # Use work days calculation based on setting
+                    total_days = self._count_work_days(start, end, include_weekends)
+                    elapsed_days = self._count_work_days(start, today, include_weekends)
+                    if total_days > 0:
+                        estimated_progress = int((elapsed_days / total_days) * 100)
             except (ValueError, ZeroDivisionError):
                 estimated_progress = 0
 
@@ -82,7 +135,7 @@ class WBSService:
         actual_progress = item.get('actual_progress', 0) or 0
         progress_variance = actual_progress - estimated_progress
 
-        # Check if overdue
+        # Check if overdue (with warning days)
         # Priority: Use revised end date if available, otherwise use original end date
         is_overdue = False
         if item.get('status') != '已完成':
@@ -90,7 +143,9 @@ class WBSService:
             if overdue_check_date:
                 try:
                     end_date_obj = datetime.strptime(overdue_check_date, '%Y-%m-%d').date()
-                    is_overdue = date.today() > end_date_obj
+                    # Apply warning days - mark as overdue N days before actual due date
+                    warning_date = end_date_obj - timedelta(days=overdue_warning_days)
+                    is_overdue = date.today() > warning_date
                 except ValueError:
                     pass
 
