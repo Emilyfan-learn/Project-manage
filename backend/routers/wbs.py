@@ -40,7 +40,7 @@ async def get_wbs_list(
     include_internal: bool = Query(True, description="Include internal items"),
     exclude_completed: bool = Query(False, description="Exclude completed/cancelled items"),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Number of items to return"),
+    limit: int = Query(100, ge=1, le=10000, description="Number of items to return"),
 ):
     """
     Get list of WBS items with optional filters
