@@ -21,11 +21,8 @@ const IssueList = () => {
   const [smartFilters, setSmartFilters] = useState({
     myResponsibility: false,
     clientOwner: false,
-    internalOnly: false,
     overdueOnly: false,
-    escalatedOnly: false,
     notCompleted: false, // 未完成（排除 Closed/Cancelled/Resolved）
-    reportedDateRange: '', // 回報日期區間
     targetDateRange: '', // 目標解決日期區間
   })
   const [myUsername, setMyUsername] = useState('') // For "my responsibility" filter
@@ -235,19 +232,9 @@ const IssueList = () => {
       filtered = filtered.filter((item) => item.owner_type === '客戶')
     }
 
-    // Filter: Only internal items
-    if (smartFilters.internalOnly) {
-      filtered = filtered.filter((item) => item.owner_type === '內部')
-    }
-
     // Filter: Only overdue items
     if (smartFilters.overdueOnly) {
       filtered = filtered.filter((item) => item.is_overdue === true)
-    }
-
-    // Filter: Only escalated items
-    if (smartFilters.escalatedOnly) {
-      filtered = filtered.filter((item) => item.is_escalated === true)
     }
 
     // Filter: Not completed (exclude Closed, Cancelled, Resolved)
@@ -260,43 +247,6 @@ const IssueList = () => {
     if (filters.status === 'not_completed') {
       const completedStatuses = ['Closed', 'Cancelled', 'Resolved']
       filtered = filtered.filter((item) => !completedStatuses.includes(item.status))
-    }
-
-    // Filter: Reported date range
-    if (smartFilters.reportedDateRange) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      filtered = filtered.filter((item) => {
-        if (!item.reported_date) return false
-        const reportedDate = new Date(item.reported_date)
-        reportedDate.setHours(0, 0, 0, 0)
-
-        switch (smartFilters.reportedDateRange) {
-          case 'today':
-            return reportedDate.getTime() === today.getTime()
-          case 'yesterday':
-            const yesterday = new Date(today)
-            yesterday.setDate(yesterday.getDate() - 1)
-            return reportedDate.getTime() === yesterday.getTime()
-          case 'last7days':
-            const last7days = new Date(today)
-            last7days.setDate(last7days.getDate() - 7)
-            return reportedDate >= last7days && reportedDate <= today
-          case 'last30days':
-            const last30days = new Date(today)
-            last30days.setDate(last30days.getDate() - 30)
-            return reportedDate >= last30days && reportedDate <= today
-          case 'thisMonth':
-            return reportedDate.getMonth() === today.getMonth() && reportedDate.getFullYear() === today.getFullYear()
-          case 'lastMonth':
-            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-            const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
-            return reportedDate >= lastMonth && reportedDate <= lastMonthEnd
-          default:
-            return true
-        }
-      })
     }
 
     // Filter: Target resolution date range
@@ -557,22 +507,6 @@ const IssueList = () => {
               </span>
             </label>
 
-            {/* Escalated Only Filter */}
-            <label className="flex items-center text-sm">
-              <input
-                type="checkbox"
-                checked={smartFilters.escalatedOnly}
-                onChange={(e) =>
-                  setSmartFilters({ ...smartFilters, escalatedOnly: e.target.checked })
-                }
-                className="mr-2 rounded"
-              />
-              <span className="text-gray-700 flex items-center">
-                只看已升級
-                <span className="ml-1 text-orange-500">⬆️</span>
-              </span>
-            </label>
-
             {/* Not Completed Filter */}
             <label className="flex items-center text-sm">
               <input
@@ -587,44 +521,6 @@ const IssueList = () => {
                 未完成
               </span>
             </label>
-
-            {/* Internal Only Filter */}
-            <label className="flex items-center text-sm">
-              <input
-                type="checkbox"
-                checked={smartFilters.internalOnly}
-                onChange={(e) =>
-                  setSmartFilters({ ...smartFilters, internalOnly: e.target.checked })
-                }
-                className="mr-2 rounded"
-              />
-              <span className="text-gray-700">
-                內部安排
-              </span>
-            </label>
-
-            {/* Reported Date Range Filter */}
-            <div className="md:col-span-2 lg:col-span-1">
-              <label htmlFor="reported-date-range-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                回報日期區間
-              </label>
-              <select
-                id="reported-date-range-filter"
-                value={smartFilters.reportedDateRange}
-                onChange={(e) =>
-                  setSmartFilters({ ...smartFilters, reportedDateRange: e.target.value })
-                }
-                className="input-field text-sm w-full"
-              >
-                <option value="">全部日期</option>
-                <option value="today">今天</option>
-                <option value="yesterday">昨天</option>
-                <option value="last7days">最近 7 天</option>
-                <option value="last30days">最近 30 天</option>
-                <option value="thisMonth">本月</option>
-                <option value="lastMonth">上個月</option>
-              </select>
-            </div>
 
             {/* Target Resolution Date Range Filter */}
             <div className="md:col-span-2 lg:col-span-1">
