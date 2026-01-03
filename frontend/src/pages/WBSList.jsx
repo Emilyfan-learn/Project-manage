@@ -70,12 +70,15 @@ const WBSList = () => {
     fetchSystemSettings()
   }, [fetchProjects, fetchSystemSettings])
 
-  // Auto-select first project if none selected
+  // Auto-select default project or first project if none selected
   useEffect(() => {
     if (!projectId && projectsList.length > 0) {
-      setProjectId(projectsList[0].project_id)
+      const defaultProject = getSystemSetting('default_project_id', '')
+      // Use default project if it exists in the list, otherwise use first project
+      const projectExists = projectsList.some(p => p.project_id === defaultProject)
+      setProjectId(projectExists ? defaultProject : projectsList[0].project_id)
     }
-  }, [projectId, projectsList])
+  }, [projectId, projectsList, systemSettings, getSystemSetting])
 
   useEffect(() => {
     if (projectId) {

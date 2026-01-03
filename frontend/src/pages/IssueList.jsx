@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useIssues } from '../hooks/useIssues'
 import { useProjects } from '../hooks/useProjects'
 import { useExcel } from '../hooks/useExcel'
+import { useSettings } from '../hooks/useSettings'
 import IssueForm from '../components/IssueForm'
 
 const IssueList = () => {
@@ -51,16 +52,25 @@ const IssueList = () => {
     exportIssuesToExcel,
   } = useExcel()
 
+  const {
+    systemSettings,
+    fetchSystemSettings,
+    getSystemSetting,
+  } = useSettings()
+
   useEffect(() => {
     fetchProjects()
-  }, [fetchProjects])
+    fetchSystemSettings()
+  }, [fetchProjects, fetchSystemSettings])
 
-  // Auto-select first project if none selected
+  // Auto-select default project or first project if none selected
   useEffect(() => {
     if (!projectId && projectsList.length > 0) {
-      setProjectId(projectsList[0].project_id)
+      const defaultProject = getSystemSetting('default_project_id', '')
+      const projectExists = projectsList.some(p => p.project_id === defaultProject)
+      setProjectId(projectExists ? defaultProject : projectsList[0].project_id)
     }
-  }, [projectId, projectsList])
+  }, [projectId, projectsList, systemSettings, getSystemSetting])
 
   useEffect(() => {
     if (projectId) {

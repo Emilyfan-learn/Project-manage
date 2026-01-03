@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useProjects } from '../hooks/useProjects'
+import { useSettings } from '../hooks/useSettings'
 import ProjectForm from '../components/ProjectForm'
 
 const ProjectList = () => {
@@ -26,9 +27,28 @@ const ProjectList = () => {
     deleteProject,
   } = useProjects()
 
+  const {
+    systemSettings,
+    fetchSystemSettings,
+    updateSystemSetting,
+    getSystemSetting,
+  } = useSettings()
+
+  const defaultProjectId = getSystemSetting('default_project_id', '')
+
   useEffect(() => {
     fetchProjects(filters)
-  }, [fetchProjects, filters])
+    fetchSystemSettings()
+  }, [fetchProjects, fetchSystemSettings, filters])
+
+  const handleSetDefault = async (projectId) => {
+    try {
+      await updateSystemSetting('default_project_id', projectId)
+      alert(`已將「${projectId}」設為預設專案`)
+    } catch (err) {
+      alert(`設定失敗: ${err.message}`)
+    }
+  }
 
   // Load stats for all projects
   useEffect(() => {
@@ -208,6 +228,11 @@ const ProjectList = () => {
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-gray-900 mb-1">
                           {project.project_name}
+                          {defaultProjectId === project.project_id && (
+                            <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                              預設
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-500">{project.project_id}</p>
                       </div>
@@ -282,7 +307,7 @@ const ProjectList = () => {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Link
                         to={`/wbs?project=${project.project_id}`}
                         className="flex-1 text-center btn-primary text-sm py-2"
@@ -295,9 +320,22 @@ const ProjectList = () => {
                       >
                         編輯
                       </button>
+                      {defaultProjectId !== project.project_id ? (
+                        <button
+                          onClick={() => handleSetDefault(project.project_id)}
+                          className="px-3 py-2 text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-md text-sm font-medium transition-colors"
+                          title="設為預設專案"
+                        >
+                          設預設
+                        </button>
+                      ) : (
+                        <span className="px-3 py-2 text-gray-400 bg-gray-100 rounded-md text-sm">
+                          已預設
+                        </span>
+                      )}
                       <button
                         onClick={() => handleDelete(project)}
-                        className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium transition-colors"
+                        className="px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium transition-colors"
                         title="刪除專案"
                       >
                         刪除
