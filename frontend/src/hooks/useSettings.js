@@ -7,6 +7,7 @@ import api from '../utils/api'
 export const useSettings = () => {
   const [systemSettings, setSystemSettings] = useState([])
   const [projectSettings, setProjectSettings] = useState([])
+  const [holidays, setHolidays] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -137,9 +138,69 @@ export const useSettings = () => {
     }
   }, [])
 
+  // ==================== Holidays ====================
+
+  // Fetch holidays (optionally by year)
+  const fetchHolidays = useCallback(async (year = null) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const url = year ? `/settings/holidays?year=${year}` : '/settings/holidays'
+      const response = await api.get(url)
+      setHolidays(response.items || [])
+      return response
+    } catch (err) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Create holiday
+  const createHoliday = useCallback(async (data) => {
+    try {
+      const response = await api.post('/settings/holidays', data)
+      setHolidays(prev => [...prev, response].sort((a, b) =>
+        new Date(a.holiday_date) - new Date(b.holiday_date)
+      ))
+      return response
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }, [])
+
+  // Update holiday
+  const updateHoliday = useCallback(async (holidayId, data) => {
+    try {
+      const response = await api.put(`/settings/holidays/${holidayId}`, data)
+      setHolidays(prev =>
+        prev.map(h => h.holiday_id === holidayId ? response : h)
+          .sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date))
+      )
+      return response
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }, [])
+
+  // Delete holiday
+  const deleteHoliday = useCallback(async (holidayId) => {
+    try {
+      await api.delete(`/settings/holidays/${holidayId}`)
+      setHolidays(prev => prev.filter(h => h.holiday_id !== holidayId))
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }, [])
+
   return {
     systemSettings,
     projectSettings,
+    holidays,
     loading,
     error,
     fetchSystemSettings,
@@ -150,6 +211,10 @@ export const useSettings = () => {
     updateProjectSetting,
     deleteProjectSetting,
     fetchOwnerUnits,
-    addOwnerUnit
+    addOwnerUnit,
+    fetchHolidays,
+    createHoliday,
+    updateHoliday,
+    deleteHoliday
   }
 }

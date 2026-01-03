@@ -3,7 +3,7 @@ Pydantic models for system and project settings
 """
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 
 class SystemSettingBase(BaseModel):
@@ -79,3 +79,39 @@ class OwnerUnitResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+# Holiday Models
+class HolidayBase(BaseModel):
+    """Base model for holidays"""
+    year: int = Field(..., description="Year of the holiday")
+    holiday_date: date = Field(..., description="Date of the holiday")
+    holiday_name: str = Field(..., description="Name of the holiday")
+
+
+class HolidayCreate(HolidayBase):
+    """Model for creating a holiday"""
+    pass
+
+
+class HolidayUpdate(BaseModel):
+    """Model for updating a holiday"""
+    year: Optional[int] = None
+    holiday_date: Optional[date] = None
+    holiday_name: Optional[str] = None
+
+
+class HolidayResponse(HolidayBase):
+    """Model for holiday response"""
+    holiday_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class HolidayListResponse(BaseModel):
+    """Model for holiday list response"""
+    total: int
+    items: List[HolidayResponse]

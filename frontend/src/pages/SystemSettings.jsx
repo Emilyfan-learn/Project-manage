@@ -7,19 +7,37 @@ import { useSettings } from '../hooks/useSettings'
 const SystemSettings = () => {
   const {
     systemSettings,
+    holidays,
     loading,
     error,
     fetchSystemSettings,
-    updateSystemSetting
+    updateSystemSetting,
+    fetchHolidays,
+    createHoliday,
+    updateHoliday,
+    deleteHoliday
   } = useSettings()
 
   const [successMessage, setSuccessMessage] = useState('')
   const [formData, setFormData] = useState({})
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [showHolidayForm, setShowHolidayForm] = useState(false)
+  const [editingHoliday, setEditingHoliday] = useState(null)
+  const [holidayForm, setHolidayForm] = useState({
+    holiday_date: '',
+    holiday_name: ''
+  })
 
   useEffect(() => {
     fetchSystemSettings()
+    fetchHolidays(selectedYear)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    fetchHolidays(selectedYear)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear])
 
   useEffect(() => {
     // Initialize form data from settings
@@ -65,6 +83,86 @@ const SystemSettings = () => {
     } catch (err) {
       alert('儲存設定時發生錯誤：' + err.message)
     }
+  }
+
+  // Holiday form handlers
+  const handleHolidayFormChange = (e) => {
+    const { name, value } = e.target
+    setHolidayForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleAddHoliday = () => {
+    setEditingHoliday(null)
+    setHolidayForm({
+      holiday_date: `${selectedYear}-01-01`,
+      holiday_name: ''
+    })
+    setShowHolidayForm(true)
+  }
+
+  const handleEditHoliday = (holiday) => {
+    setEditingHoliday(holiday)
+    setHolidayForm({
+      holiday_date: holiday.holiday_date,
+      holiday_name: holiday.holiday_name
+    })
+    setShowHolidayForm(true)
+  }
+
+  const handleHolidaySubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const dateObj = new Date(holidayForm.holiday_date)
+      const year = dateObj.getFullYear()
+
+      if (editingHoliday) {
+        await updateHoliday(editingHoliday.holiday_id, {
+          year,
+          holiday_date: holidayForm.holiday_date,
+          holiday_name: holidayForm.holiday_name
+        })
+        setSuccessMessage('假日已更新！')
+      } else {
+        await createHoliday({
+          year,
+          holiday_date: holidayForm.holiday_date,
+          holiday_name: holidayForm.holiday_name
+        })
+        setSuccessMessage('假日已新增！')
+      }
+
+      setShowHolidayForm(false)
+      setEditingHoliday(null)
+      fetchHolidays(selectedYear)
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } catch (err) {
+      alert('操作失敗：' + err.message)
+    }
+  }
+
+  const handleDeleteHoliday = async (holiday) => {
+    if (window.confirm(`確定要刪除「${holiday.holiday_name}」嗎？`)) {
+      try {
+        await deleteHoliday(holiday.holiday_id)
+        setSuccessMessage('假日已刪除！')
+        setTimeout(() => setSuccessMessage(''), 3000)
+      } catch (err) {
+        alert('刪除失敗：' + err.message)
+      }
+    }
+  }
+
+  const handleCancelHolidayForm = () => {
+    setShowHolidayForm(false)
+    setEditingHoliday(null)
+    setHolidayForm({ holiday_date: '', holiday_name: '' })
+  }
+
+  // Generate year options
+  const currentYear = new Date().getFullYear()
+  const yearOptions = []
+  for (let y = currentYear - 2; y <= currentYear + 5; y++) {
+    yearOptions.push(y)
   }
 
   if (loading && systemSettings.length === 0) {
@@ -302,6 +400,122 @@ const SystemSettings = () => {
           </button>
         </div>
       </form>
+
+      {/* Holiday Management Section */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">假日設定</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="year-select" className="text-sm text-gray-600">年度：</label>
+              <select
+                id="year-select"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="input-field py-1 px-2"
+              >
+                {yearOptions.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <button onClick={handleAddHoliday} className="btn-primary text-sm">
+              + 新增假日
+            </button>
+          </div>
+        </div>
+
+        {/* Holiday Form Modal */}
+        {showHolidayForm && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+            <h3 className="text-lg font-medium mb-3">
+              {editingHoliday ? '編輯假日' : '新增假日'}
+            </h3>
+            <form onSubmit={handleHolidaySubmit} className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label htmlFor="holiday_date" className="label">日期</label>
+                <input
+                  type="date"
+                  id="holiday_date"
+                  name="holiday_date"
+                  value={holidayForm.holiday_date}
+                  onChange={handleHolidayFormChange}
+                  required
+                  className="input-field"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label htmlFor="holiday_name" className="label">假日名稱</label>
+                <input
+                  type="text"
+                  id="holiday_name"
+                  name="holiday_name"
+                  value={holidayForm.holiday_name}
+                  onChange={handleHolidayFormChange}
+                  required
+                  placeholder="例如：元旦"
+                  className="input-field"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="btn-primary">
+                  {editingHoliday ? '更新' : '新增'}
+                </button>
+                <button type="button" onClick={handleCancelHolidayForm} className="btn-secondary">
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Holiday List */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">日期</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">假日名稱</th>
+                <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {holidays.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="px-4 py-8 text-center text-gray-500">
+                    {selectedYear} 年尚未設定假日
+                  </td>
+                </tr>
+              ) : (
+                holidays.map(holiday => (
+                  <tr key={holiday.holiday_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm text-gray-900">{holiday.holiday_date}</td>
+                    <td className="px-4 py-2 text-sm text-gray-900">{holiday.holiday_name}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button
+                        onClick={() => handleEditHoliday(holiday)}
+                        className="text-primary-600 hover:text-primary-800 text-sm mr-3"
+                      >
+                        編輯
+                      </button>
+                      <button
+                        onClick={() => handleDeleteHoliday(holiday)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        刪除
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-500">
+          設定的假日將會在工作天數計算時自動排除（需關閉「包含週末」設定）
+        </p>
+      </div>
     </div>
   )
 }

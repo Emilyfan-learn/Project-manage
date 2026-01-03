@@ -47,9 +47,25 @@ def migrate():
         """)
         print("✓ Created project_settings table")
 
+        # 3. Holidays table (system-wide holidays)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS holidays (
+                holiday_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                year INTEGER NOT NULL,
+                holiday_date DATE NOT NULL,
+                holiday_name TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(holiday_date)
+            )
+        """)
+        print("✓ Created holidays table")
+
         # Create indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_project ON project_settings(project_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_key ON project_settings(setting_key)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_holidays_year ON holidays(year)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(holiday_date)")
         print("✓ Created indexes")
 
         # Insert default system settings

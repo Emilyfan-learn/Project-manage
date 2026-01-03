@@ -47,16 +47,37 @@ class WBSService:
 
         return self._settings_cache.get(key, default)
 
-    def _count_work_days(self, start_date: date, end_date: date, include_weekends: bool = True) -> int:
-        """Count work days between two dates"""
-        if include_weekends:
-            return (end_date - start_date).days
+    def _get_holiday_dates(self) -> set:
+        """Get all holiday dates as a set for quick lookup"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT holiday_date FROM holidays")
+        rows = cursor.fetchall()
+        conn.close()
+        return {row['holiday_date'] for row in rows}
 
-        # Exclude weekends
+    def _count_work_days(self, start_date: date, end_date: date, include_weekends: bool = True) -> int:
+        """Count work days between two dates, excluding holidays"""
+        if include_weekends:
+            # Still need to exclude holidays even if weekends are included
+            holiday_dates = self._get_holiday_dates()
+            work_days = 0
+            current = start_date
+            while current <= end_date:
+                date_str = current.strftime('%Y-%m-%d')
+                if date_str not in holiday_dates:
+                    work_days += 1
+                current += timedelta(days=1)
+            return work_days
+
+        # Exclude weekends and holidays
+        holiday_dates = self._get_holiday_dates()
         work_days = 0
         current = start_date
         while current <= end_date:
-            if current.weekday() < 5:  # Monday = 0, Friday = 4
+            date_str = current.strftime('%Y-%m-%d')
+            # Monday = 0, Friday = 4, and not a holiday
+            if current.weekday() < 5 and date_str not in holiday_dates:
                 work_days += 1
             current += timedelta(days=1)
         return work_days

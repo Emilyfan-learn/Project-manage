@@ -7,7 +7,8 @@ from datetime import datetime
 from backend.config import settings
 from backend.models.settings import (
     SystemSettingCreate, SystemSettingUpdate, SystemSettingResponse,
-    ProjectSettingCreate, ProjectSettingUpdate, ProjectSettingResponse
+    ProjectSettingCreate, ProjectSettingUpdate, ProjectSettingResponse,
+    HolidayCreate, HolidayUpdate, HolidayResponse
 )
 
 
@@ -214,3 +215,102 @@ class SettingsService:
             is_active=True
         )
         return self.create_project_setting(setting_data)
+
+    # ==================== Holidays ====================
+
+    def get_holidays(self, year: Optional[int] = None) -> List[HolidayResponse]:
+        """Get holidays, optionally filtered by year"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        if year:
+            cursor.execute("""
+                SELECT * FROM holidays WHERE year = ? ORDER BY holiday_date
+            """, (year,))
+        else:
+            cursor.execute("SELECT * FROM holidays ORDER BY holiday_date")
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [HolidayResponse(**dict(row)) for row in rows]
+
+    def get_holiday_by_id(self, holiday_id: int) -> Optional[HolidayResponse]:
+        """Get holiday by ID"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM holidays WHERE holiday_id = ?", (holiday_id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return None
+
+        return HolidayResponse(**dict(row))
+
+    def create_holiday(self, holiday_data: HolidayCreate) -> HolidayResponse:
+        """Create a new holiday"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO holidays (year, holiday_date, holiday_name)
+            VALUES (?, ?, ?)
+        """, (
+            holiday_data.year,
+            holiday_data.holiday_date,
+            holiday_data.holiday_name
+        ))
+
+        holiday_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+
+        return self.get_holiday_by_id(holiday_id)
+
+    def update_holiday(self, holiday_id: int, update_data: HolidayUpdate) -> Optional[HolidayResponse]:
+        """Update a holiday"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Build dynamic UPDATE query
+        update_fields = []
+        params = []
+
+        data = update_data.model_dump(exclude_unset=True)
+        for key, value in data.items():
+            update_fields.append(f"{key} = ?")
+            params.append(value)
+
+        if not update_fields:
+            return self.get_holiday_by_id(holiday_id)
+
+        update_fields.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(holiday_id)
+
+        query = f"UPDATE holidays SET {', '.join(update_fields)} WHERE holiday_id = ?"
+        cursor.execute(query, params)
+
+        conn.commit()
+        conn.close()
+
+        return self.get_holiday_by_id(holiday_id)
+
+    def delete_holiday(self, holiday_id: int) -> bool:
+        """Delete a holiday"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM holidays WHERE holiday_id = ?", (holiday_id,))
+
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+
+        return success
+
+    def get_holiday_dates(self, year: Optional[int] = None) -> List[str]:
+        """Get list of holiday dates (for work day calculation)"""
+        holidays = self.get_holidays(year)
+        return [str(h.holiday_date) for h in holidays]
