@@ -781,6 +781,47 @@ const WBSList = () => {
       {/* WBS List */}
       {!loading && (
         <>
+          {/* Top Pagination Controls */}
+          {(() => {
+            const itemsPerPage = getSystemSetting('items_per_page', 1000)
+            const totalPages = Math.ceil(total / itemsPerPage)
+
+            if (totalPages <= 1) return null
+
+            return (
+              <div className="mb-3 flex items-center justify-between bg-gray-50 p-2 rounded">
+                <span className="text-sm text-gray-600">
+                  共 {total} 筆，第 {currentPage} / {totalPages} 頁
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ← 上一頁
+                  </button>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(Number(e.target.value))}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded"
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <option key={page} value={page}>第 {page} 頁</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    下一頁 →
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Hierarchy Controls */}
           <div className="mb-3 flex justify-end gap-2">
             <button
