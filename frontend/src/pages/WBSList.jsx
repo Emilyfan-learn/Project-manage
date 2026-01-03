@@ -106,7 +106,12 @@ const WBSList = () => {
       } else {
         const itemsPerPage = getSystemSetting('items_per_page', 1000)
         const skip = (currentPage - 1) * itemsPerPage
-        fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+        // Only pass backend-supported filters (status), not frontend-only filters (parent_wbs_id)
+        const backendFilters = {}
+        if (filters.status && filters.status !== 'not_completed') {
+          backendFilters.status = filters.status
+        }
+        fetchWBS({ project_id: projectId, ...backendFilters, limit: itemsPerPage, skip })
       }
     }
   }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters])
@@ -665,9 +670,8 @@ const WBSList = () => {
           <div className="mt-6">
             <button
               onClick={() => {
-                const itemsPerPage = getSystemSetting('items_per_page', 1000)
-                const skip = (currentPage - 1) * itemsPerPage
-                fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+                // Trigger re-fetch by resetting page (useEffect will handle the fetch)
+                setCurrentPage(1)
               }}
               className="btn-secondary"
             >
