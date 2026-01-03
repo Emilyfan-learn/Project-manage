@@ -88,13 +88,28 @@ const WBSList = () => {
     }
   }, [fetchIssues, projectId, systemSettings, getSystemSetting])
 
+  // Check if any frontend-only filters are active
+  const hasFrontendFilters = filters.parent_wbs_id ||
+    smartFilters.overdueOnly ||
+    smartFilters.dueThisWeek ||
+    smartFilters.notCompleted ||
+    smartFilters.internalOnly ||
+    smartFilters.ownerUnit ||
+    smartFilters.wbsCode ||
+    filters.status === 'not_completed'
+
   useEffect(() => {
     if (projectId) {
-      const itemsPerPage = getSystemSetting('items_per_page', 1000)
-      const skip = (currentPage - 1) * itemsPerPage
-      fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+      // When frontend filters are active, fetch all data to filter/paginate on client
+      if (hasFrontendFilters) {
+        fetchWBS({ project_id: projectId, limit: 10000, skip: 0 })
+      } else {
+        const itemsPerPage = getSystemSetting('items_per_page', 1000)
+        const skip = (currentPage - 1) * itemsPerPage
+        fetchWBS({ project_id: projectId, ...filters, limit: itemsPerPage, skip })
+      }
     }
-  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting])
+  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters])
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -478,7 +493,17 @@ const WBSList = () => {
     return flattenHierarchy(tree)
   }
 
-  const filteredWBSList = getFilteredWBSList()
+  const allFilteredWBSList = getFilteredWBSList()
+
+  // Calculate pagination values
+  const itemsPerPage = getSystemSetting('items_per_page', 100)
+  const filteredTotal = hasFrontendFilters ? allFilteredWBSList.length : total
+  const totalPages = Math.ceil(filteredTotal / itemsPerPage)
+
+  // Apply client-side pagination when frontend filters are active
+  const filteredWBSList = hasFrontendFilters
+    ? allFilteredWBSList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : allFilteredWBSList
 
   // Get count of related issues for a WBS ID
   const getRelatedIssuesCount = (wbsId) => {
@@ -786,45 +811,38 @@ const WBSList = () => {
       {!loading && (
         <>
           {/* Top Pagination Controls */}
-          {(() => {
-            const itemsPerPage = getSystemSetting('items_per_page', 1000)
-            const totalPages = Math.ceil(total / itemsPerPage)
-
-            if (totalPages <= 1) return null
-
-            return (
-              <div className="mb-3 flex items-center justify-between bg-gray-50 p-2 rounded">
-                <span className="text-sm text-gray-600">
-                  共 {total} 筆，第 {currentPage} / {totalPages} 頁
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ← 上一頁
-                  </button>
-                  <select
-                    value={currentPage}
-                    onChange={(e) => setCurrentPage(Number(e.target.value))}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded"
-                  >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <option key={page} value={page}>第 {page} 頁</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    下一頁 →
-                  </button>
-                </div>
+          {totalPages > 1 && (
+            <div className="mb-3 flex items-center justify-between bg-gray-50 p-2 rounded">
+              <span className="text-sm text-gray-600">
+                共 {filteredTotal} 筆，第 {currentPage} / {totalPages} 頁
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← 上一頁
+                </button>
+                <select
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
+                  className="px-2 py-1 text-sm border border-gray-300 rounded"
+                >
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <option key={page} value={page}>第 {page} 頁</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  下一頁 →
+                </button>
               </div>
-            )
-          })()}
+            </div>
+          )}
 
           {/* Hierarchy Controls */}
           <div className="mb-3 flex justify-end gap-2">
@@ -1013,69 +1031,54 @@ const WBSList = () => {
           {/* Summary and Pagination */}
           <div className="mt-4 flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              {filteredWBSList.length !== wbsList.length ? (
+              {hasFrontendFilters ? (
                 <>
-                  顯示 {filteredWBSList.length} 筆（共 {total} 筆資料）
+                  篩選結果 {filteredTotal} 筆
+                  {totalPages > 1 && ` | 顯示第 ${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filteredTotal)} 筆`}
                 </>
               ) : (
                 <>
                   共 {total} 筆資料
-                  {(() => {
-                    const itemsPerPage = getSystemSetting('items_per_page', 1000)
-                    const totalPages = Math.ceil(total / itemsPerPage)
-                    if (totalPages > 1) {
-                      const startItem = (currentPage - 1) * itemsPerPage + 1
-                      const endItem = Math.min(currentPage * itemsPerPage, total)
-                      return ` | 顯示第 ${startItem}-${endItem} 筆`
-                    }
-                    return null
-                  })()}
+                  {totalPages > 1 && ` | 顯示第 ${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, total)} 筆`}
                 </>
               )}
             </div>
 
             {/* Pagination Controls */}
-            {(() => {
-              const itemsPerPage = getSystemSetting('items_per_page', 1000)
-              const totalPages = Math.ceil(total / itemsPerPage)
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← 上一頁
+                </button>
 
-              if (totalPages <= 1) return null
+                <span className="text-sm text-gray-600">
+                  第 {currentPage} / {totalPages} 頁
+                </span>
 
-              return (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ← 上一頁
-                  </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  下一頁 →
+                </button>
 
-                  <span className="text-sm text-gray-600">
-                    第 {currentPage} / {totalPages} 頁
-                  </span>
-
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    下一頁 →
-                  </button>
-
-                  {/* Quick page jump */}
-                  <select
-                    value={currentPage}
-                    onChange={(e) => setCurrentPage(Number(e.target.value))}
-                    className="ml-2 px-2 py-1 text-sm border border-gray-300 rounded"
-                  >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <option key={page} value={page}>第 {page} 頁</option>
-                    ))}
-                  </select>
-                </div>
-              )
-            })()}
+                {/* Quick page jump */}
+                <select
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
+                  className="ml-2 px-2 py-1 text-sm border border-gray-300 rounded"
+                >
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <option key={page} value={page}>第 {page} 頁</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </>
       )}
