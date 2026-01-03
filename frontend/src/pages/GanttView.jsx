@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useWBS } from '../hooks/useWBS'
 import { useProjects } from '../hooks/useProjects'
 import { useSettings } from '../hooks/useSettings'
+import { formatDate } from '../utils/dateFormat'
 import GanttChart from '../components/GanttChart'
 
 const GanttView = () => {
@@ -124,6 +125,8 @@ const GanttView = () => {
     })
     setParentFilter('all')
   }
+
+  const dateFormat = getSystemSetting('date_format', 'yyyy/MM/dd')
 
   const viewModes = [
     { value: 'Quarter Day', label: '6小時' },
@@ -361,22 +364,22 @@ const GanttView = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">預計開始</label>
-                    <p className="text-gray-900">{selectedTask.original_planned_start || '-'}</p>
+                    <p className="text-gray-900">{formatDate(selectedTask.original_planned_start, dateFormat)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">預計結束</label>
-                    <p className="text-gray-900">{selectedTask.original_planned_end || '-'}</p>
+                    <p className="text-gray-900">{formatDate(selectedTask.original_planned_end, dateFormat)}</p>
                   </div>
                   {selectedTask.revised_planned_start && (
                     <div>
                       <label className="text-sm font-medium text-gray-500">調整後開始</label>
-                      <p className="text-blue-600">{selectedTask.revised_planned_start}</p>
+                      <p className="text-blue-600">{formatDate(selectedTask.revised_planned_start, dateFormat)}</p>
                     </div>
                   )}
                   {selectedTask.revised_planned_end && (
                     <div>
                       <label className="text-sm font-medium text-gray-500">調整後結束</label>
-                      <p className="text-blue-600">{selectedTask.revised_planned_end}</p>
+                      <p className="text-blue-600">{formatDate(selectedTask.revised_planned_end, dateFormat)}</p>
                     </div>
                   )}
                   <div>

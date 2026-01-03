@@ -7,6 +7,7 @@ import { usePending } from '../hooks/usePending'
 import { useProjects } from '../hooks/useProjects'
 import { useExcel } from '../hooks/useExcel'
 import { useSettings } from '../hooks/useSettings'
+import { formatDate } from '../utils/dateFormat'
 import PendingForm from '../components/PendingForm'
 import PendingReplyModal from '../components/PendingReplyModal'
 
@@ -271,6 +272,7 @@ const PendingList = () => {
   }
 
   const filteredPendingList = getFilteredPendingList()
+  const dateFormat = getSystemSetting('date_format', 'yyyy/MM/dd')
 
   if (showForm) {
     return (
@@ -598,7 +600,7 @@ const PendingList = () => {
                   filteredPendingList.map((item) => (
                     <tr key={item.pending_id} className={item.is_overdue ? 'bg-red-50' : ''}>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.task_date}
+                        {formatDate(item.task_date, dateFormat)}
                         {item.is_overdue && (
                           <span className="ml-2 text-red-500">⚠️</span>
                         )}
@@ -622,10 +624,10 @@ const PendingList = () => {
                         )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.planned_start_date || '-'}
+                        {formatDate(item.planned_start_date, dateFormat)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.expected_completion_date || '-'}
+                        {formatDate(item.expected_completion_date, dateFormat)}
                         {item.days_until_due !== null && item.days_until_due < 0 && (
                           <span className="ml-2 text-red-600 text-xs">
                             (逾期 {Math.abs(item.days_until_due)} 天)
@@ -633,7 +635,7 @@ const PendingList = () => {
                         )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.actual_completion_date || '-'}
+                        {formatDate(item.actual_completion_date, dateFormat)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span

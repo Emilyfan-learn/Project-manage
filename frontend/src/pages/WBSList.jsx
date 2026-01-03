@@ -8,6 +8,7 @@ import { useExcel } from '../hooks/useExcel'
 import { useProjects } from '../hooks/useProjects'
 import { useIssues } from '../hooks/useIssues'
 import { useSettings } from '../hooks/useSettings'
+import { formatDateShort } from '../utils/dateFormat'
 import WBSForm from '../components/WBSForm'
 
 const WBSList = () => {
@@ -502,6 +503,7 @@ const WBSList = () => {
 
   // Calculate pagination values
   const itemsPerPage = getSystemSetting('items_per_page', 100)
+  const dateFormat = getSystemSetting('date_format', 'yyyy/MM/dd')
   const filteredTotal = hasFrontendFilters ? allFilteredWBSList.length : total
   const totalPages = Math.ceil(filteredTotal / itemsPerPage)
 
@@ -960,21 +962,21 @@ const WBSList = () => {
                         {item.owner_unit || '-'}
                       </td>
                       <td className="px-1 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {item.original_planned_start ? item.original_planned_start.substring(5).replace('-', '/') : '-'}
+                        {formatDateShort(item.original_planned_start, dateFormat)}
                       </td>
                       <td className="px-1 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {item.original_planned_end ? item.original_planned_end.substring(5).replace('-', '/') : '-'}
+                        {formatDateShort(item.original_planned_end, dateFormat)}
                       </td>
                       <td className="px-1 py-2 whitespace-nowrap text-xs text-gray-500">
                         {item.revised_planned_start ? (
-                          <span className="text-blue-600">{item.revised_planned_start.substring(5).replace('-', '/')}</span>
+                          <span className="text-blue-600">{formatDateShort(item.revised_planned_start, dateFormat)}</span>
                         ) : (
                           '-'
                         )}
                       </td>
                       <td className="px-1 py-2 whitespace-nowrap text-xs text-gray-500">
                         {item.revised_planned_end ? (
-                          <span className="text-blue-600">{item.revised_planned_end.substring(5).replace('-', '/')}</span>
+                          <span className="text-blue-600">{formatDateShort(item.revised_planned_end, dateFormat)}</span>
                         ) : (
                           '-'
                         )}

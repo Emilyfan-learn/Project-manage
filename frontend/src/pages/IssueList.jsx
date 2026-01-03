@@ -7,6 +7,7 @@ import { useIssues } from '../hooks/useIssues'
 import { useProjects } from '../hooks/useProjects'
 import { useExcel } from '../hooks/useExcel'
 import { useSettings } from '../hooks/useSettings'
+import { formatDate } from '../utils/dateFormat'
 import IssueForm from '../components/IssueForm'
 
 const IssueList = () => {
@@ -309,6 +310,7 @@ const IssueList = () => {
   }
 
   const filteredIssuesList = getFilteredIssuesList()
+  const dateFormat = getSystemSetting('date_format', 'yyyy/MM/dd')
 
   if (showForm) {
     return (
@@ -675,13 +677,13 @@ const IssueList = () => {
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {item.reported_date || '-'}
+                        {formatDate(item.reported_date, dateFormat)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {item.target_resolution_date || '-'}
+                        {formatDate(item.target_resolution_date, dateFormat)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {item.actual_resolution_date || '-'}
+                        {formatDate(item.actual_resolution_date, dateFormat)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span
