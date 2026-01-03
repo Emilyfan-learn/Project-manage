@@ -24,6 +24,7 @@ const IssueList = () => {
     internalOnly: false,
     overdueOnly: false,
     escalatedOnly: false,
+    notCompleted: false, // 未完成（排除 Closed/Cancelled/Resolved）
     reportedDateRange: '', // 回報日期區間
     targetDateRange: '', // 目標解決日期區間
   })
@@ -249,6 +250,18 @@ const IssueList = () => {
       filtered = filtered.filter((item) => item.is_escalated === true)
     }
 
+    // Filter: Not completed (exclude Closed, Cancelled, Resolved)
+    if (smartFilters.notCompleted) {
+      const completedStatuses = ['Closed', 'Cancelled', 'Resolved']
+      filtered = filtered.filter((item) => !completedStatuses.includes(item.status))
+    }
+
+    // Filter: Status dropdown with special "not_completed" option
+    if (filters.status === 'not_completed') {
+      const completedStatuses = ['Closed', 'Cancelled', 'Resolved']
+      filtered = filtered.filter((item) => !completedStatuses.includes(item.status))
+    }
+
     // Filter: Reported date range
     if (smartFilters.reportedDateRange) {
       const today = new Date()
@@ -418,6 +431,7 @@ const IssueList = () => {
               className="input-field"
             >
               <option value="">全部</option>
+              <option value="not_completed">未完成</option>
               <option value="Open">Open</option>
               <option value="In Progress">In Progress</option>
               <option value="Pending">Pending</option>
@@ -556,6 +570,36 @@ const IssueList = () => {
               <span className="text-gray-700 flex items-center">
                 只看已升級
                 <span className="ml-1 text-orange-500">⬆️</span>
+              </span>
+            </label>
+
+            {/* Not Completed Filter */}
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={smartFilters.notCompleted}
+                onChange={(e) =>
+                  setSmartFilters({ ...smartFilters, notCompleted: e.target.checked })
+                }
+                className="mr-2 rounded"
+              />
+              <span className="text-gray-700">
+                未完成
+              </span>
+            </label>
+
+            {/* Internal Only Filter */}
+            <label className="flex items-center text-sm">
+              <input
+                type="checkbox"
+                checked={smartFilters.internalOnly}
+                onChange={(e) =>
+                  setSmartFilters({ ...smartFilters, internalOnly: e.target.checked })
+                }
+                className="mr-2 rounded"
+              />
+              <span className="text-gray-700">
+                內部安排
               </span>
             </label>
 
