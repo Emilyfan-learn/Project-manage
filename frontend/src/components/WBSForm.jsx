@@ -1,7 +1,7 @@
 /**
  * WBS Form Component for creating and editing WBS items
  */
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import api from '../utils/api'
 import { useSettings } from '../hooks/useSettings'
 import { naturalSortWbsId } from '../hooks/useWBS'
@@ -10,6 +10,12 @@ const WBSForm = ({ initialData = null, onSubmit, onCancel, projectId, availableW
   const [availableParents, setAvailableParents] = useState([])
   const [ownerUnits, setOwnerUnits] = useState([])
   const { fetchOwnerUnits } = useSettings()
+  // State for API-calculated work days
+  const [calculatedDays, setCalculatedDays] = useState({
+    original: null,
+    revised: null,
+    actual: null
+  })
   const [formData, setFormData] = useState({
     project_id: projectId || '',
     wbs_id: '',
@@ -32,31 +38,40 @@ const WBSForm = ({ initialData = null, onSubmit, onCancel, projectId, availableW
 
   const [errors, setErrors] = useState({})
 
-  // Calculate work days between two dates
-  const calculateWorkDays = (startDate, endDate) => {
-    if (!startDate || !endDate) return null
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null
+  // Function to calculate work days via API
+  const fetchWorkDays = useCallback(async (startDate, endDate, phase) => {
+    if (!startDate || !endDate) {
+      setCalculatedDays(prev => ({ ...prev, [phase]: null }))
+      return
+    }
+    try {
+      const response = await api.get('/wbs/calculate-work-days', {
+        params: { start_date: startDate, end_date: endDate }
+      })
+      setCalculatedDays(prev => ({ ...prev, [phase]: response.work_days }))
+    } catch (err) {
+      console.error('Failed to calculate work days:', err)
+      setCalculatedDays(prev => ({ ...prev, [phase]: null }))
+    }
+  }, [])
 
-    const diffTime = Math.abs(end - start)
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays + 1 // Include both start and end dates
-  }
+  // Calculate work days when dates change
+  useEffect(() => {
+    fetchWorkDays(formData.original_planned_start, formData.original_planned_end, 'original')
+  }, [formData.original_planned_start, formData.original_planned_end, fetchWorkDays])
 
-  // Calculate work days for each phase
-  const originalPlanDays = calculateWorkDays(
-    formData.original_planned_start,
-    formData.original_planned_end
-  )
-  const revisedPlanDays = calculateWorkDays(
-    formData.revised_planned_start,
-    formData.revised_planned_end
-  )
-  const actualDays = calculateWorkDays(
-    formData.actual_start_date,
-    formData.actual_end_date
-  )
+  useEffect(() => {
+    fetchWorkDays(formData.revised_planned_start, formData.revised_planned_end, 'revised')
+  }, [formData.revised_planned_start, formData.revised_planned_end, fetchWorkDays])
+
+  useEffect(() => {
+    fetchWorkDays(formData.actual_start_date, formData.actual_end_date, 'actual')
+  }, [formData.actual_start_date, formData.actual_end_date, fetchWorkDays])
+
+  // Use calculated days from API
+  const originalPlanDays = calculatedDays.original
+  const revisedPlanDays = calculatedDays.revised
+  const actualDays = calculatedDays.actual
 
   useEffect(() => {
     if (initialData) {

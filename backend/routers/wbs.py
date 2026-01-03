@@ -145,6 +145,23 @@ async def get_wbs_children(item_id: str):
     return children
 
 
+@router.get("/calculate-work-days")
+async def calculate_work_days(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)")
+):
+    """
+    Calculate work days between two dates
+
+    Excludes weekends (if configured) and holidays
+    """
+    try:
+        work_days = wbs_service.calculate_work_days(start_date, end_date)
+        return {"work_days": work_days, "start_date": start_date, "end_date": end_date}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/batch", response_model=List[WBSResponse])
 async def create_wbs_batch(wbs_items: List[WBSCreate]):
     """

@@ -87,6 +87,23 @@ class WBSService:
             current += timedelta(days=1)
         return work_days
 
+    def calculate_work_days(self, start_date_str: str, end_date_str: str) -> int:
+        """
+        Public method to calculate work days between two dates
+        Uses system settings for include_weekends and excludes holidays
+        """
+        try:
+            start = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError as e:
+            raise ValueError(f"Invalid date format. Use YYYY-MM-DD: {e}")
+
+        if start > end:
+            start, end = end, start  # Swap if start is after end
+
+        include_weekends = self._get_system_setting('include_weekends', True)
+        return self._count_work_days(start, end, include_weekends)
+
     def _natural_sort_key(self, wbs_id: str) -> list:
         """Generate a sort key for natural sorting of WBS IDs like '1.2.10'"""
         if not wbs_id:
