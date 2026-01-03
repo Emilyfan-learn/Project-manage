@@ -51,10 +51,15 @@ class WBSService:
         """Get all holiday dates as a set for quick lookup"""
         conn = self._get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT holiday_date FROM holidays")
-        rows = cursor.fetchall()
-        conn.close()
-        return {row['holiday_date'] for row in rows}
+        try:
+            cursor.execute("SELECT holiday_date FROM holidays")
+            rows = cursor.fetchall()
+            return {row['holiday_date'] for row in rows}
+        except Exception:
+            # Table doesn't exist yet, return empty set
+            return set()
+        finally:
+            conn.close()
 
     def _count_work_days(self, start_date: date, end_date: date, include_weekends: bool = True) -> int:
         """Count work days between two dates, excluding holidays"""

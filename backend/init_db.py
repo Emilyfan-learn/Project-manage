@@ -368,6 +368,19 @@ def create_database_schema():
         )
     """)
 
+    # 12. Holidays table (system-wide holidays for work day calculation)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS holidays (
+            holiday_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            year INTEGER NOT NULL,
+            holiday_date DATE NOT NULL,
+            holiday_name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(holiday_date)
+        )
+    """)
+
     # Create indexes for better query performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracking_items_project ON tracking_items(project_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracking_items_wbs ON tracking_items(wbs_id)")
@@ -385,6 +398,8 @@ def create_database_schema():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_project ON project_settings(project_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_project_settings_key ON project_settings(setting_key)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_holidays_year ON holidays(year)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(holiday_date)")
 
     # Migrate existing tables - add missing columns
     _migrate_pending_items(cursor)
