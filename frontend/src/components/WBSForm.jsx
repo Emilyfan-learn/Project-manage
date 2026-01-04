@@ -40,17 +40,21 @@ const WBSForm = ({ initialData = null, onSubmit, onCancel, projectId, availableW
 
   // Function to calculate work days via API
   const fetchWorkDays = useCallback(async (startDate, endDate, phase) => {
+    console.log('[WBSForm] fetchWorkDays called:', { startDate, endDate, phase })
     if (!startDate || !endDate) {
+      console.log('[WBSForm] Missing dates, skipping API call')
       setCalculatedDays(prev => ({ ...prev, [phase]: null }))
       return
     }
     try {
+      console.log('[WBSForm] Calling API /wbs/calculate-work-days')
       const response = await api.get('/wbs/calculate-work-days', {
         params: { start_date: startDate, end_date: endDate }
       })
+      console.log('[WBSForm] API response:', response)
       setCalculatedDays(prev => ({ ...prev, [phase]: response.work_days }))
     } catch (err) {
-      console.error('Failed to calculate work days:', err)
+      console.error('[WBSForm] Failed to calculate work days:', err)
       setCalculatedDays(prev => ({ ...prev, [phase]: null }))
     }
   }, [])
