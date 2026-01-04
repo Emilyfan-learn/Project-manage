@@ -142,25 +142,28 @@ const WBSList = () => {
 
   // Scroll to highlighted item when list loads
   useEffect(() => {
-    if (highlightItemId && wbsList.length > 0 && !loading) {
-      // Wait a bit for the DOM to render
+    if (highlightItemId && wbsList.length > 0 && !loading && !showForm) {
+      console.log('[WBSList] Highlight effect triggered:', highlightItemId)
+      // Wait for DOM to render after form closes
       const timer = setTimeout(() => {
+        console.log('[WBSList] Looking for ref:', highlightRef.current)
         if (highlightRef.current) {
           highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          console.log('[WBSList] Scrolled to item')
         }
-        // Clear highlight after 5 seconds
-        const clearTimer = setTimeout(() => {
-          setHighlightItemId('')
-          // Update URL to remove highlight param
-          const newParams = new URLSearchParams(searchParams)
-          newParams.delete('highlight')
-          setSearchParams(newParams)
-        }, 5000)
-        return () => clearTimeout(clearTimer)
-      }, 300)
-      return () => clearTimeout(timer)
+      }, 500)
+
+      // Clear highlight after 5 seconds
+      const clearTimer = setTimeout(() => {
+        setHighlightItemId('')
+      }, 5000)
+
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(clearTimer)
+      }
     }
-  }, [highlightItemId, wbsList, loading])
+  }, [highlightItemId, wbsList, loading, showForm])
 
   // Auto-expand all items on initial load
   useEffect(() => {
