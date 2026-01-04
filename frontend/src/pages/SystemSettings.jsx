@@ -342,7 +342,7 @@ const SystemSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Enable Overdue Alert */}
             <div>
-              <label className="label">
+              <label className="label text-gray-400">
                 逾期提醒
               </label>
               <div className="flex items-center mt-2">
@@ -351,13 +351,14 @@ const SystemSettings = () => {
                   id="enable_overdue_alert"
                   name="enable_overdue_alert"
                   checked={formData.enable_overdue_alert === 'true'}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  disabled
+                  className="h-4 w-4 text-gray-300 border-gray-300 rounded cursor-not-allowed"
                 />
-                <label htmlFor="enable_overdue_alert" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="enable_overdue_alert" className="ml-2 block text-sm text-gray-400">
                   啟用逾期提醒
                 </label>
               </div>
+              <p className="text-xs text-gray-400 mt-1">（此功能尚未實作，目前永遠啟用）</p>
             </div>
 
             {/* Progress Lag Threshold */}
