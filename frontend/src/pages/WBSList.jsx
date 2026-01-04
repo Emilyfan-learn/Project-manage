@@ -126,12 +126,14 @@ const WBSList = () => {
     setCurrentPage(1)
   }, [projectId, filters, smartFilters])
 
-  // Update URL when projectId changes
+  // Update URL when projectId changes (preserve other params like highlight)
   useEffect(() => {
     if (projectId) {
-      setSearchParams({ project: projectId })
+      const newParams = new URLSearchParams(searchParams)
+      newParams.set('project', projectId)
+      setSearchParams(newParams)
     }
-  }, [projectId, setSearchParams])
+  }, [projectId])
 
   useEffect(() => {
     if (successMessage) {
