@@ -209,17 +209,24 @@ const WBSList = () => {
   const handleSubmit = async (formData) => {
     try {
       if (editingItem) {
-        await updateWBS(editingItem.item_id, formData)
+        const editedItemId = editingItem.item_id
+        await updateWBS(editedItemId, formData)
         setSuccessMessage('更新成功')
         setShowForm(false)
         setEditingItem(null)
         setContinueAdding(false)
+        // Highlight the edited item after returning to list
+        setHighlightItemId(editedItemId)
       } else {
-        await createWBS(formData)
+        const newItem = await createWBS(formData)
         setSuccessMessage('新增成功')
         // 如果是新增，保持在表單頁面以繼續新增
         setEditingItem(null)
         setContinueAdding(true)
+        // Highlight the newly created item
+        if (newItem && newItem.item_id) {
+          setHighlightItemId(newItem.item_id)
+        }
         // 不關閉表單，讓用戶可以繼續新增
       }
       // Refresh the WBS list to show the new/updated item
