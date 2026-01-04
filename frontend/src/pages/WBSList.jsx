@@ -37,6 +37,7 @@ const WBSList = () => {
   const [currentPage, setCurrentPage] = useState(1) // 當前頁碼
   const fileInputRef = useRef(null)
   const highlightRef = useRef(null)
+  const highlightFetchedRef = useRef(false) // 追蹤是否已為高亮載入過資料
 
   const {
     wbsList,
@@ -103,12 +104,19 @@ const WBSList = () => {
     smartFilters.wbsCode ||
     filters.status === 'not_completed'
 
+  // Track if we need to fetch all data for highlight
+  const needsHighlightFetch = highlightItemId && !highlightFetchedRef.current
+
   useEffect(() => {
     if (projectId) {
-      // When highlight is present or frontend filters are active, fetch all data
-      if (hasFrontendFilters || highlightItemId) {
+      // When highlight is present (first time) or frontend filters are active, fetch all data
+      if (hasFrontendFilters || needsHighlightFetch) {
         fetchWBS({ project_id: projectId, limit: 10000, skip: 0 })
-      } else {
+        if (needsHighlightFetch) {
+          highlightFetchedRef.current = true
+        }
+      } else if (!highlightFetchedRef.current) {
+        // Normal pagination fetch (only if not in highlight mode)
         const itemsPerPage = getSystemSetting('items_per_page', 1000)
         const skip = (currentPage - 1) * itemsPerPage
         // Only pass backend-supported filters (status), not frontend-only filters (parent_wbs_id)
@@ -118,8 +126,9 @@ const WBSList = () => {
         }
         fetchWBS({ project_id: projectId, ...backendFilters, limit: itemsPerPage, skip })
       }
+      // When highlightFetchedRef.current is true and highlightItemId is cleared, don't re-fetch
     }
-  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters, highlightItemId])
+  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters, needsHighlightFetch])
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -138,8 +147,8 @@ const WBSList = () => {
   // Sync highlightItemId with URL parameter when navigating from Dashboard
   useEffect(() => {
     const highlightFromUrl = searchParams.get('highlight') || ''
-    console.log('[WBSList] URL highlight param changed:', highlightFromUrl, 'current state:', highlightItemId)
     if (highlightFromUrl && highlightFromUrl !== highlightItemId) {
+      highlightFetchedRef.current = false // Reset to allow new highlight fetch
       setHighlightItemId(highlightFromUrl)
     }
   }, [searchParams])
@@ -153,13 +162,9 @@ const WBSList = () => {
 
   // Scroll to highlighted item when list loads
   useEffect(() => {
-    console.log('[WBSList] Highlight check:', { highlightItemId, wbsListLength: wbsList.length, loading, showForm })
     if (highlightItemId && wbsList.length > 0 && !loading && !showForm) {
-      console.log('[WBSList] Highlight effect triggered:', highlightItemId)
-      console.log('[WBSList] Available item_ids:', wbsList.map(w => w.item_id))
       // Check if there's a matching item
       const matchingItem = wbsList.find(w => w.item_id === highlightItemId)
-      console.log('[WBSList] Matching item found:', matchingItem ? matchingItem.item_id : 'NOT FOUND')
 
       // Auto-expand parent nodes if the highlighted item exists
       if (matchingItem && matchingItem.wbs_id) {
@@ -169,7 +174,6 @@ const WBSList = () => {
         for (let i = 1; i < wbsIdParts.length; i++) {
           parentsToExpand.add(wbsIdParts.slice(0, i).join('.'))
         }
-        console.log('[WBSList] Expanding parents:', Array.from(parentsToExpand))
         setExpandedItems(prev => {
           const newSet = new Set(prev)
           parentsToExpand.forEach(id => newSet.add(id))
@@ -177,20 +181,20 @@ const WBSList = () => {
         })
       }
 
-      // Wait for DOM to render after form closes
+      // Wait for DOM to render after expanding parents
       const timer = setTimeout(() => {
-        console.log('[WBSList] Looking for ref:', highlightRef.current)
         if (highlightRef.current) {
           highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          console.log('[WBSList] Scrolled to item')
-        } else {
-          console.log('[WBSList] Ref not found - item might not be in current view/page')
         }
       }, 500)
 
-      // Clear highlight after 5 seconds
+      // Clear highlight visual after 5 seconds (but don't re-fetch data)
       const clearTimer = setTimeout(() => {
         setHighlightItemId('')
+        // Also clear the URL highlight parameter
+        const newParams = new URLSearchParams(searchParams)
+        newParams.delete('highlight')
+        setSearchParams(newParams, { replace: true })
       }, 5000)
 
       return () => {
