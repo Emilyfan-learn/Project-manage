@@ -77,7 +77,7 @@ def migrate():
 
             # Calculation rules
             ('progress_calculation', 'date_based', 'string', '進度計算方式（date_based: 基於日期, manual: 手動輸入）'),
-            ('include_weekends', 'true', 'boolean', '工作天數計算是否包含週末'),
+            ('include_weekends', 'false', 'boolean', '工作天數計算是否包含週末'),
             ('overdue_warning_days', '3', 'number', '逾期警示天數（提前幾天警示）'),
 
             # Notification settings
