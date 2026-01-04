@@ -112,7 +112,6 @@ class WBSService:
         if row:
             include_weekends = row['setting_value'].lower() in ['true', '1', 'yes']
 
-        print(f"[DEBUG] calculate_work_days: include_weekends={include_weekends}, start={start}, end={end}")
         return self._count_work_days(start, end, include_weekends)
 
     def _natural_sort_key(self, wbs_id: str) -> list:
