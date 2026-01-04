@@ -135,6 +135,15 @@ const WBSList = () => {
     }
   }, [projectId])
 
+  // Sync highlightItemId with URL parameter when navigating from Dashboard
+  useEffect(() => {
+    const highlightFromUrl = searchParams.get('highlight') || ''
+    console.log('[WBSList] URL highlight param changed:', highlightFromUrl, 'current state:', highlightItemId)
+    if (highlightFromUrl && highlightFromUrl !== highlightItemId) {
+      setHighlightItemId(highlightFromUrl)
+    }
+  }, [searchParams])
+
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(''), 5000)
@@ -144,14 +153,21 @@ const WBSList = () => {
 
   // Scroll to highlighted item when list loads
   useEffect(() => {
+    console.log('[WBSList] Highlight check:', { highlightItemId, wbsListLength: wbsList.length, loading, showForm })
     if (highlightItemId && wbsList.length > 0 && !loading && !showForm) {
       console.log('[WBSList] Highlight effect triggered:', highlightItemId)
+      console.log('[WBSList] Available item_ids:', wbsList.map(w => w.item_id))
+      // Check if there's a matching item
+      const matchingItem = wbsList.find(w => w.item_id === highlightItemId)
+      console.log('[WBSList] Matching item found:', matchingItem ? matchingItem.item_id : 'NOT FOUND')
       // Wait for DOM to render after form closes
       const timer = setTimeout(() => {
         console.log('[WBSList] Looking for ref:', highlightRef.current)
         if (highlightRef.current) {
           highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
           console.log('[WBSList] Scrolled to item')
+        } else {
+          console.log('[WBSList] Ref not found - item might not be in current view/page')
         }
       }, 500)
 
