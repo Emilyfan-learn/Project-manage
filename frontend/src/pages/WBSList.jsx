@@ -105,8 +105,8 @@ const WBSList = () => {
 
   useEffect(() => {
     if (projectId) {
-      // When frontend filters are active, fetch all data to filter/paginate on client
-      if (hasFrontendFilters) {
+      // When highlight is present or frontend filters are active, fetch all data
+      if (hasFrontendFilters || highlightItemId) {
         fetchWBS({ project_id: projectId, limit: 10000, skip: 0 })
       } else {
         const itemsPerPage = getSystemSetting('items_per_page', 1000)
@@ -119,7 +119,7 @@ const WBSList = () => {
         fetchWBS({ project_id: projectId, ...backendFilters, limit: itemsPerPage, skip })
       }
     }
-  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters])
+  }, [fetchWBS, projectId, filters, currentPage, systemSettings, getSystemSetting, hasFrontendFilters, highlightItemId])
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -160,6 +160,23 @@ const WBSList = () => {
       // Check if there's a matching item
       const matchingItem = wbsList.find(w => w.item_id === highlightItemId)
       console.log('[WBSList] Matching item found:', matchingItem ? matchingItem.item_id : 'NOT FOUND')
+
+      // Auto-expand parent nodes if the highlighted item exists
+      if (matchingItem && matchingItem.wbs_id) {
+        const wbsIdParts = matchingItem.wbs_id.split('.')
+        const parentsToExpand = new Set()
+        // Build parent wbs_ids (e.g., for "2.5.5.3", expand "2", "2.5", "2.5.5")
+        for (let i = 1; i < wbsIdParts.length; i++) {
+          parentsToExpand.add(wbsIdParts.slice(0, i).join('.'))
+        }
+        console.log('[WBSList] Expanding parents:', Array.from(parentsToExpand))
+        setExpandedItems(prev => {
+          const newSet = new Set(prev)
+          parentsToExpand.forEach(id => newSet.add(id))
+          return newSet
+        })
+      }
+
       // Wait for DOM to render after form closes
       const timer = setTimeout(() => {
         console.log('[WBSList] Looking for ref:', highlightRef.current)
