@@ -16,6 +16,7 @@ const WBSList = () => {
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [projectId, setProjectId] = useState(searchParams.get('project') || '')
+  const [highlightItemId, setHighlightItemId] = useState(searchParams.get('highlight') || '')
   const [filters, setFilters] = useState({
     status: '',
     parent_wbs_id: '', // 新增父WBS ID篩選
@@ -35,6 +36,7 @@ const WBSList = () => {
   const [initialExpand, setInitialExpand] = useState(false) // 追蹤是否已初始展開
   const [currentPage, setCurrentPage] = useState(1) // 當前頁碼
   const fileInputRef = useRef(null)
+  const highlightRef = useRef(null)
 
   const {
     wbsList,
@@ -137,6 +139,28 @@ const WBSList = () => {
       return () => clearTimeout(timer)
     }
   }, [successMessage])
+
+  // Scroll to highlighted item when list loads
+  useEffect(() => {
+    if (highlightItemId && wbsList.length > 0 && !loading) {
+      // Wait a bit for the DOM to render
+      const timer = setTimeout(() => {
+        if (highlightRef.current) {
+          highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+        // Clear highlight after 5 seconds
+        const clearTimer = setTimeout(() => {
+          setHighlightItemId('')
+          // Update URL to remove highlight param
+          const newParams = new URLSearchParams(searchParams)
+          newParams.delete('highlight')
+          setSearchParams(newParams)
+        }, 5000)
+        return () => clearTimeout(clearTimer)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [highlightItemId, wbsList, loading])
 
   // Auto-expand all items on initial load
   useEffect(() => {
@@ -934,8 +958,14 @@ const WBSList = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredWBSList.map((item) => (
-                    <tr key={item.item_id} className={item.is_overdue ? 'bg-red-50' : ''}>
+                  filteredWBSList.map((item) => {
+                    const isHighlighted = item.item_id === highlightItemId
+                    return (
+                    <tr
+                      key={item.item_id}
+                      ref={isHighlighted ? highlightRef : null}
+                      className={`${item.is_overdue ? 'bg-red-50' : ''} ${isHighlighted ? 'bg-yellow-200 animate-pulse ring-2 ring-yellow-400' : ''}`}
+                    >
                       {/* WBS ID 欄位 */}
                       <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
                         <div className="flex items-center gap-1">
@@ -1055,7 +1085,7 @@ const WBSList = () => {
                         </button>
                       </td>
                     </tr>
-                  ))
+                  )})
                 )}
               </tbody>
             </table>

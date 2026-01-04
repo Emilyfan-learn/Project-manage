@@ -371,10 +371,10 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {dueTodayItems.map((item, idx) => {
                 const linkTo = item.type === 'WBS'
-                  ? `/wbs?project=${item.projectId}`
+                  ? `/wbs?project=${item.projectId}&highlight=${item.projectId}_${item.id}`
                   : item.type === 'Pending'
-                    ? `/pending?project=${item.projectId}`
-                    : `/issues?project=${item.projectId}`
+                    ? `/pending?project=${item.projectId}&highlight=${item.id}`
+                    : `/issues?project=${item.projectId}&highlight=${item.id}`
                 return (
                   <Link
                     key={idx}
@@ -412,10 +412,10 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   {overdueItems.map((item, idx) => {
                     const linkTo = item.type === 'WBS'
-                      ? `/wbs?project=${item.projectId}`
+                      ? `/wbs?project=${item.projectId}&highlight=${item.projectId}_${item.id}`
                       : item.type === 'Pending'
-                        ? `/pending?project=${item.projectId}`
-                        : `/issues?project=${item.projectId}`
+                        ? `/pending?project=${item.projectId}&highlight=${item.id}`
+                        : `/issues?project=${item.projectId}&highlight=${item.id}`
                     return (
                       <Link
                         key={idx}
@@ -444,10 +444,10 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   {shouldStartItems.map((item, idx) => {
                     const linkTo = item.type === 'WBS'
-                      ? `/wbs?project=${item.projectId}`
+                      ? `/wbs?project=${item.projectId}&highlight=${item.projectId}_${item.id}`
                       : item.type === 'Pending'
-                        ? `/pending?project=${item.projectId}`
-                        : `/issues?project=${item.projectId}`
+                        ? `/pending?project=${item.projectId}&highlight=${item.id}`
+                        : `/issues?project=${item.projectId}&highlight=${item.id}`
                     return (
                       <Link
                         key={idx}
@@ -493,10 +493,10 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {dueSoonItems.map((item, idx) => {
                 const linkTo = item.type === 'WBS'
-                  ? `/wbs?project=${item.projectId}`
+                  ? `/wbs?project=${item.projectId}&highlight=${item.projectId}_${item.id}`
                   : item.type === 'Pending'
-                    ? `/pending?project=${item.projectId}`
-                    : `/issues?project=${item.projectId}`
+                    ? `/pending?project=${item.projectId}&highlight=${item.id}`
+                    : `/issues?project=${item.projectId}&highlight=${item.id}`
                 return (
                   <Link
                     key={idx}
